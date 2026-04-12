@@ -5,4 +5,7 @@ edition = "2024"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-bevy = { version = "0.18.1", features = ["jpeg"] }
+bevy = { version = "0.18.1", default-features = false, features = ["2d", "jpeg"] }
+
+[profile.dev.package."*"]
+opt-level = 3
