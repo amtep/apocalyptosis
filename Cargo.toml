@@ -5,3 +5,4 @@ edition = "2024"
 license = "GPL-3.0-or-later"
 
 [dependencies]
+bevy = { version = "0.18.1", features = ["jpeg"] }
