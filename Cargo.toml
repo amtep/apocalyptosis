@@ -11,8 +11,12 @@ bevy = {
     features = ["2d", "file_watcher", "jpeg", "wayland"],
 }
 bevy_common_assets = { version = "0.16.0", features = ["toml"] }
+fluent = "0.17.0"
+line-numbers = "0.4.0"
 serde = "1.0.228"
 serde_derive = "1.0.228"
+thiserror = "2.0.18"
+unic-langid = { version = "0.9.6", features = ["macros"] }
 
 [profile.dev.package."*"]
 opt-level = 3

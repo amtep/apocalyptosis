@@ -4,7 +4,7 @@ use bevy::{asset::AsAssetId, prelude::*};
 use bevy_common_assets::toml::TomlAssetPlugin;
 use serde::Deserialize;
 
-use crate::ui::MapUi;
+use crate::{text::TextKey, ui::MapUi};
 
 const REGIONS_ASSET_PATH: &str = "data/regions.toml";
 
@@ -51,6 +51,7 @@ fn watch_regions(
     mut q_ui: Query<(Entity, &mut Text, &mut Node, &RegionUi)>,
     mapui: Single<Entity, With<MapUi>>,
 ) {
+    info!("regions changed");
     if let Some(settings) = assets.get(&regions.0) {
         let mut seen: HashSet<&str> = HashSet::default();
         for (region_e, mut text, mut node, region) in &mut q_ui {
@@ -66,13 +67,14 @@ fn watch_regions(
         for (key, region_settings) in &settings.0 {
             if !seen.contains(&key.as_ref()) {
                 commands.spawn((
-                    Text::new(key.clone()),
+                    Text::new("".to_string()),
                     Node {
                         position_type: PositionType::Absolute,
                         left: percent(region_settings.x),
                         top: percent(region_settings.y),
                         ..default()
                     },
+                    TextKey(key.clone()),
                     RegionUi(key.clone()),
                     ChildOf(*mapui),
                 ));
