@@ -1,7 +1,27 @@
 [north_america]
-x = 18
-y = 28
+x = 16
+y = 27
 
 [south_america]
 x = 28
 y = 55
+
+[europe]
+x = 50
+y = 20
+
+[africa]
+x = 53
+y = 45
+
+[near_east]
+x = 63
+y = 30
+
+[far_east]
+x = 80
+y = 27
+
+[australia]
+x = 83
+y = 60
