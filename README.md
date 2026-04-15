@@ -15,3 +15,9 @@ We're just setting up the basic framework of the game.
 
 The game design takes a lot of inspiration from [Endgame: Singularity](https://github.com/singularity/singularity).
 Do check out that game!
+
+# License
+
+GNU General Public License, version 3 or later.
+Some exceptions for some asset files.
+See [LICENSE.md](LICENSE.md) for details.
