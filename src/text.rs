@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     fmt::{Display, Formatter},
     string::FromUtf8Error,
     sync::Arc,
@@ -11,6 +12,8 @@ use bevy::{
     prelude::*,
 };
 use fluent::{FluentError, FluentResource, concurrent::FluentBundle};
+use fluent_datetime::BundleExt;
+use fluent_syntax::ast::Pattern;
 use line_numbers::LinePositions;
 use thiserror::Error;
 use unic_langid::langid;
@@ -93,7 +96,7 @@ impl AssetLoader for FluentResourceAssetLoader {
 struct FluentResourceAsset(Arc<FluentResource>);
 
 #[derive(Resource)]
-struct FluentBundleResource(FluentBundle<Arc<FluentResource>>);
+pub struct FluentBundleResource(pub FluentBundle<Arc<FluentResource>>);
 
 #[derive(Component)]
 struct FluentFolder(Handle<LoadedFolder>);
@@ -137,6 +140,10 @@ fn watch_fluent_files(
             error!("could not add NUMBER to fluent bundle: {e}");
             return;
         }
+        if let Err(e) = bundle.add_datetime_support() {
+            error!("could not add DATETIME to fluent bundle: {e}");
+            return;
+        }
         for handle in &folder.handles {
             if let Ok(h) = handle.clone().try_typed::<FluentResourceAsset>()
                 && let Some(r) = fluent_resource_assets.get(h.id())
@@ -155,29 +162,43 @@ fn watch_fluent_files(
 
 fn update_simple_text_keys(q: Query<(&mut Text, &TextKey)>, bundle: Res<FluentBundleResource>) {
     for (mut text, key) in q {
-        let Some(msg) = bundle.0.get_message(&key.0) else {
-            let fallback = key.0.to_string();
-            // Avoid warning every frame
-            if text.0 != fallback {
-                warn!("missing text key: {key}");
-                text.0 = fallback;
+        let new_text = if let Some(pattern) = bundle.get_pattern(&key.0, &key.0) {
+            let mut errors = Vec::new();
+            let s = bundle.0.format_pattern(pattern, None, &mut errors);
+            // Warn only if the text has changed, to avoid warning spam
+            if text.0 != s {
+                for err in errors {
+                    warn!("error evaluating key: {key}: {err}");
+                }
             }
-            continue;
+            s
+        } else {
+            Cow::Borrowed(key.0.as_ref())
+        };
+        // Avoid mutating the component if nothing changed,
+        // because components check for mutable derefs.
+        if text.0 != new_text {
+            text.0 = new_text.into_owned();
+        }
+    }
+}
+
+impl FluentBundleResource {
+    pub fn get_pattern<'a>(&'a self, key: &str, text: &str) -> Option<&'a Pattern<&'a str>> {
+        let Some(msg) = self.0.get_message(key) else {
+            // Avoid warning every frame
+            if text != key {
+                warn!("missing text key: {key}");
+            }
+            return None;
         };
         let Some(value) = msg.value() else {
-            let fallback = key.0.to_string();
             // Avoid warning every frame
-            if text.0 != fallback {
+            if text != key {
                 warn!("key missing a value: {key}");
-                text.0 = fallback;
             }
-            continue;
+            return None;
         };
-        let mut errors = Vec::new();
-        let s = bundle.0.format_pattern(value, None, &mut errors);
-        for err in errors {
-            warn!("error evaluating key: {key}: {err}");
-        }
-        text.0 = s.into_owned();
+        Some(value)
     }
 }

@@ -5,18 +5,32 @@ edition = "2024"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-bevy = {
-    version = "0.18.1",
-    default-features = false,
-    features = ["2d", "file_watcher", "jpeg", "wayland"],
-}
 bevy_common_assets = { version = "0.16.0", features = ["toml"] }
+chrono = { version = "0.4.44", default-features = false, features = ["std"] }
 fluent = "0.17.0"
+fluent-datetime = "0.2.0"
+fluent-syntax = "0.12.0"
+icu = "2.2.0"
 line-numbers = "0.4.0"
 serde = "1.0.228"
 serde_derive = "1.0.228"
 thiserror = "2.0.18"
 unic-langid = { version = "0.9.6", features = ["macros"] }
+
+[dependencies.bevy]
+version = "0.18.1"
+default-features = false
+features = [
+    # This pulls in a lot of default features, aimed at 2D games
+    "2d",
+    # This is for debugging. It means assets get hotloaded when
+    # the files change.
+    "file_watcher",
+    # This is because the main map background asset is a jpg
+    "jpeg",
+    # Only x11 support is default on linux
+    "wayland"
+]
 
 [profile.dev.package."*"]
 opt-level = 3
