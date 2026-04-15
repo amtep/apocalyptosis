@@ -1,4 +1,4 @@
-use cultists::main_loop::main_loop;
+use apocalyptosis::main_loop::main_loop;
 
 fn main() {
     main_loop();
