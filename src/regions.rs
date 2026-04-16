@@ -8,7 +8,7 @@ use bevy::{
 use bevy_common_assets::toml::TomlAssetPlugin;
 use serde::Deserialize;
 
-use crate::{text::TextKey, ui::MapUi};
+use crate::{constants::FONT_DISPLAY_PATH, text::TextKey, ui::MapUi};
 
 const REGIONS_ASSET_PATH: &str = "data/regions.toml";
 
@@ -50,6 +50,7 @@ fn setup_regions(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 fn watch_regions(
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
     assets: Res<Assets<RegionsAsset>>,
     regions: Single<&Regions, AssetChanged<Regions>>,
     mut q_ui_node: Query<(Entity, &mut Node, &RegionUi)>,
@@ -67,6 +68,7 @@ fn watch_regions(
                 commands.entity(region_e).despawn();
             }
         }
+        let font = asset_server.load(FONT_DISPLAY_PATH);
         for (key, region_settings) in &settings.0 {
             if !seen.contains(&key.as_ref()) {
                 let text_key = format!("region_{key}");
@@ -88,7 +90,14 @@ fn watch_regions(
                         ChildOf(*mapui),
                     ))
                     .with_children(|parent| {
-                        parent.spawn((Text::new("".to_string()), TextKey(text_key)));
+                        parent.spawn((
+                            Text::new("".to_string()),
+                            TextKey(text_key),
+                            TextFont {
+                                font: font.clone(),
+                                ..default()
+                            },
+                        ));
                     });
             }
         }

@@ -11,6 +11,8 @@ use icu::{
 };
 
 use crate::{
+    constants::FONT_PATH,
+    funds::{Funds, FundsChanged},
     text::FluentBundleResource,
     time::{GameDate, GameDateChanged},
 };
@@ -21,7 +23,11 @@ pub struct MapUi;
 #[derive(Component)]
 struct GameDateUi;
 
+#[derive(Component)]
+struct FundsUi;
+
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let font = asset_server.load(FONT_PATH);
     commands.spawn(Camera2d);
     commands
         .spawn(Node {
@@ -50,17 +56,44 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                     BackgroundColor(BLACK.into()),
                 ))
                 .with_children(|parent| {
-                    // TODO: figure out how to get the date display on the right of the screen.
-                    parent.spawn((
-                        // will be updated by update_game_date_display()
-                        Text(String::new()),
-                        TextLayout::new_with_justify(Justify::Right),
-                        Node {
-                            align_self: AlignSelf::FlexEnd,
+                    // Left-aligned status elements
+                    parent.spawn(Node {
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Row,
+                        align_self: AlignSelf::Start,
+                        align_content: AlignContent::Start,
+                        ..default()
+                    });
+                    // Right-aligned status elements
+                    parent
+                        .spawn(Node {
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Row,
+                            align_self: AlignSelf::End,
+                            align_content: AlignContent::End,
                             ..default()
-                        },
-                        GameDateUi,
-                    ));
+                        })
+                        .with_children(|parent| {
+                            parent.spawn((
+                                // will be updated by update_funds_display()
+                                Text(String::new()),
+                                TextFont {
+                                    font: font.clone(),
+                                    ..default()
+                                },
+                                FundsUi,
+                            ));
+                            // TODO: figure out how to get the date display on the right of the screen.
+                            parent.spawn((
+                                // will be updated by update_game_date_display()
+                                Text(String::new()),
+                                TextFont {
+                                    font: font.clone(),
+                                    ..default()
+                                },
+                                GameDateUi,
+                            ));
+                        });
                 });
             parent.spawn((
                 ImageNode {
@@ -77,6 +110,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
             ));
         });
     commands.add_observer(update_game_date_display);
+    commands.add_observer(update_funds_display);
 }
 
 fn update_game_date_display(
@@ -97,13 +131,22 @@ fn update_game_date_display(
     datetime.options.set_date_style(Some(length::Date::Long));
 
     if let Some(pattern) = fluent.get_pattern(key, &text.0) {
-        let mut errors = Vec::new();
         let mut args = FluentArgs::new();
         args.set("date", datetime);
-        let new_text = fluent.0.format_pattern(pattern, Some(&args), &mut errors);
-        for err in errors {
-            warn!("error evaluating key: {key}: {err}");
-        }
-        text.0 = new_text.into_owned();
+        fluent.format_pattern(key, pattern, Some(&args), &mut text.0);
+    }
+}
+
+fn update_funds_display(
+    _: On<FundsChanged>,
+    funds: Res<Funds>,
+    mut text: Single<&mut Text, With<FundsUi>>,
+    fluent: Res<FluentBundleResource>,
+) {
+    let key = "funds-display";
+    if let Some(pattern) = fluent.get_pattern(key, &text.0) {
+        let mut args = FluentArgs::new();
+        args.set("funds", funds.0);
+        fluent.format_pattern(key, pattern, Some(&args), &mut text.0);
     }
 }

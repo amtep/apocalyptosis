@@ -11,7 +11,7 @@ use bevy::{
     },
     prelude::*,
 };
-use fluent::{FluentError, FluentResource, concurrent::FluentBundle};
+use fluent::{FluentArgs, FluentError, FluentResource, concurrent::FluentBundle};
 use fluent_datetime::BundleExt;
 use fluent_syntax::ast::Pattern;
 use line_numbers::LinePositions;
@@ -184,21 +184,43 @@ fn update_simple_text_keys(q: Query<(&mut Text, &TextKey)>, bundle: Res<FluentBu
 }
 
 impl FluentBundleResource {
-    pub fn get_pattern<'a>(&'a self, key: &str, text: &str) -> Option<&'a Pattern<&'a str>> {
+    pub fn get_pattern<'a>(&'a self, key: &str, old_text: &str) -> Option<&'a Pattern<&'a str>> {
         let Some(msg) = self.0.get_message(key) else {
             // Avoid warning every frame
-            if text != key {
+            if old_text != key {
                 warn!("missing text key: {key}");
             }
             return None;
         };
         let Some(value) = msg.value() else {
             // Avoid warning every frame
-            if text != key {
+            if old_text != key {
                 warn!("key missing a value: {key}");
             }
             return None;
         };
         Some(value)
+    }
+
+    pub fn format_pattern<'a>(
+        &'a self,
+        key: &str,
+        pattern: &'a Pattern<&'a str>,
+        args: Option<&FluentArgs>,
+        text: &mut String,
+    ) {
+        let mut errors = Vec::new();
+        let new_text = self.0.format_pattern(pattern, args, &mut errors);
+        if !errors.is_empty() {
+            // Avoid warning every frame
+            if text != key {
+                for err in errors {
+                    warn!("error evaluating key: {key}: {err}");
+                }
+                *text = key.to_owned(); // fallback
+            }
+        } else if *text != new_text {
+            *text = new_text.into_owned();
+        }
     }
 }

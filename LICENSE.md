@@ -24,3 +24,29 @@ Beyond the NASA Terms, the Visible Earth team requests, but does not require:
 
    1. The Visible Earth be provided a credit as the location that the imagery was found at
    2. A URL be provided, either to the [Visible Earth](http://visibleearth.nasa.gov/) or to the page providing the link to the used image.
+
+# Fonts
+
+## DancingScript font license
+
+Copyright 2016 The Dancing Script Project Authors (https://github.com/googlefonts/DancingScript), with Reserved Font Name 'Dancing Script'.
+
+The DancingScript font is hosted at https://github.com/impallari/DancingScript
+
+It is licensed under the SIL Open Font License, Version 1.1.
+
+The specific TTF font file was downloaded from [Fontshare](https://www.fontshare.com/fonts/dancing-script)
+
+## Lora font license
+
+Copyright 2011 The Lora Project Authors (https://github.com/cyrealtype/Lora-Cyrillic), with Reserved Font Name "Lora".
+
+The Lora font is hosted at https://github.com/cyrealtype/Lora-Cyrillic
+
+It is licensed under the SIL Open Font License, Version 1.1.
+
+The specific TTF font file was downloaded from [Fontshare](https://www.fontshare.com/fonts/lora)
+
+## SIL Open Font License
+
+A copy of the license is provided under [LICENSE.OFL1.1](LICENSE.OFL1.1).
