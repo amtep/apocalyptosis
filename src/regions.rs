@@ -71,7 +71,7 @@ fn watch_regions(
         let font = asset_server.load(FONT_DISPLAY_PATH);
         for (key, region_settings) in &settings.0 {
             if !seen.contains(&key.as_ref()) {
-                let text_key = format!("region_{key}");
+                let text_key = format!("region-{key}");
                 commands
                     .spawn((
                         Node {
