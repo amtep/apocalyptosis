@@ -8,7 +8,10 @@ use icu::{
 };
 
 use crate::{
-    constants::ui::{FONT_PATH, MENU_BACKGROUND, UNICODE_FONT_PATH},
+    constants::ui::{
+        FONT_PATH, MENU_BACKGROUND, MENU_HOVER_BACKGROUND, MENU_PRESSED_BACKGROUND,
+        UNICODE_FONT_PATH,
+    },
     funds::{Funds, FundsChanged},
     text::FluentBundleResource,
     time::{GameDate, GameDateChanged, GameSpeed},
@@ -146,7 +149,7 @@ fn update_game_date_display(
     // Do a little dance
     let date = Date::try_new_iso(date.0.year(), date.0.month() as u8, date.0.day() as u8).unwrap();
     let datetime = DateTime {
-        date: date,
+        date,
         time: Time::start_of_day(),
     };
     let mut datetime: FluentDateTime = datetime.into();
@@ -170,5 +173,23 @@ fn update_funds_display(
         let mut args = FluentArgs::new();
         args.set("funds", funds.0);
         fluent.format_pattern(key, pattern, Some(&args), &mut text.0);
+    }
+}
+
+pub fn update_button_colors(
+    mut q: Query<(&Interaction, &mut BackgroundColor, &Button), Changed<Interaction>>,
+) {
+    for (interaction, mut background, _) in &mut q {
+        match *interaction {
+            Interaction::Pressed => {
+                *background = MENU_PRESSED_BACKGROUND.into();
+            }
+            Interaction::Hovered => {
+                *background = MENU_HOVER_BACKGROUND.into();
+            }
+            Interaction::None => {
+                *background = MENU_BACKGROUND.into();
+            }
+        }
     }
 }

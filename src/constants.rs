@@ -10,4 +10,6 @@ pub mod ui {
 
     /// A dark purple
     pub const MENU_BACKGROUND: Srgba = Srgba::rgb(0.2, 0.0, 0.2);
+    pub const MENU_HOVER_BACKGROUND: Srgba = Srgba::rgb(0.3, 0.0, 0.3);
+    pub const MENU_PRESSED_BACKGROUND: Srgba = Srgba::rgb(0.0, 0.0, 0.0);
 }
