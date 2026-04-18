@@ -177,9 +177,9 @@ fn update_funds_display(
 }
 
 pub fn update_button_colors(
-    mut q: Query<(&Interaction, &mut BackgroundColor, &Button), Changed<Interaction>>,
+    mut q: Query<(&Interaction, &mut BackgroundColor), (Changed<Interaction>, With<Button>)>,
 ) {
-    for (interaction, mut background, _) in &mut q {
+    for (interaction, mut background) in &mut q {
         match *interaction {
             Interaction::Pressed => {
                 *background = MENU_PRESSED_BACKGROUND.into();
