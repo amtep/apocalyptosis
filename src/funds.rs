@@ -10,7 +10,7 @@ pub struct FundsChanged;
 
 #[derive(Component)]
 #[allow(dead_code)] // TODO
-pub struct Expense(i64, ExpenseCategory);
+pub struct Expense(pub i64, pub ExpenseCategory);
 
 #[allow(dead_code)] // TODO
 pub enum ExpenseCategory {
@@ -20,7 +20,7 @@ pub enum ExpenseCategory {
 
 #[derive(Component)]
 #[allow(dead_code)] // TODO
-pub struct Income(i64, IncomeCategory);
+pub struct Income(pub i64, pub IncomeCategory);
 
 #[allow(dead_code)] // TODO
 pub enum IncomeCategory {

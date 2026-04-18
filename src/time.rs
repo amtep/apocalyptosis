@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use chrono::{Days, NaiveDate};
 
+use crate::main_loop::NewGame;
+
 #[derive(Resource)]
 pub struct GameDate(pub NaiveDate);
 
@@ -20,7 +22,11 @@ pub fn setup_game_time(mut commands: Commands) {
 pub struct GameDateChanged;
 
 pub fn advance_game_time(mut commands: Commands, mut date: ResMut<GameDate>) {
-    // We don't expect to reach 262000 AD
+    // TODO: this should instead be triggered after everything is loaded.
+    if (date.0 - GameDate::default().0).num_days() == 1 {
+        commands.trigger(NewGame);
+    }
+    // SAFETY: Will panic if we reach 262000 AD, but we don't expect to get there.
     date.0 = date.0 + Days::new(1);
     commands.trigger(GameDateChanged);
 }

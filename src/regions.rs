@@ -42,7 +42,7 @@ impl AsAssetId for Regions {
 }
 
 #[derive(Component)]
-struct RegionUi(String);
+pub struct RegionUi(String);
 
 fn setup_regions(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Regions(asset_server.load(REGIONS_ASSET_PATH)));
@@ -75,29 +75,38 @@ fn watch_regions(
                 commands
                     .spawn((
                         Node {
+                            flex_direction: FlexDirection::Column,
                             position_type: PositionType::Absolute,
                             left: percent(region_settings.x),
                             top: percent(region_settings.y),
-                            border: UiRect::all(px(2)),
-                            border_radius: BorderRadius::all(px(10)),
-                            padding: UiRect::all(px(10)),
-                            align_self: AlignSelf::Center,
                             ..default()
                         },
-                        BorderColor::all(WHITE),
-                        BackgroundColor(BLACK.into()),
                         RegionUi(key.clone()),
                         ChildOf(*mapui),
                     ))
                     .with_children(|parent| {
-                        parent.spawn((
-                            Text::new("".to_string()),
-                            TextKey(text_key),
-                            TextFont {
-                                font: font.clone(),
-                                ..default()
-                            },
-                        ));
+                        parent
+                            .spawn((
+                                Node {
+                                    border: UiRect::all(px(2)),
+                                    border_radius: BorderRadius::all(px(10)),
+                                    padding: UiRect::all(px(10)),
+                                    align_self: AlignSelf::Center,
+                                    ..default()
+                                },
+                                BorderColor::all(WHITE),
+                                BackgroundColor(BLACK.into()),
+                            ))
+                            .with_children(|parent| {
+                                parent.spawn((
+                                    Text::new("".to_string()),
+                                    TextKey(text_key),
+                                    TextFont {
+                                        font: font.clone(),
+                                        ..default()
+                                    },
+                                ));
+                            });
                     });
             }
         }

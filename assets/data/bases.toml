@@ -1,0 +1,9 @@
+[apartment]
+people = 4
+cost-per-day = 20
+initial-cost = 1200
+
+[old-farmhouse]
+people = 20
+cost-per-day = 60
+initial-cost = 100000
