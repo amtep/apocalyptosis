@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{input_focus::InputFocus, prelude::*};
 use chrono::{Days, NaiveDate};
 
 use crate::main_loop::NewGame;
@@ -13,6 +13,7 @@ impl Default for GameDate {
 }
 
 pub fn setup_game_time(mut commands: Commands) {
+    commands.init_resource::<InputFocus>();
     commands.insert_resource(Time::<Fixed>::from_seconds(1.0));
     commands.insert_resource(GameDate::default());
     // TODO: can't update game time UI yet because texts have not yet loaded.
@@ -29,4 +30,33 @@ pub fn advance_game_time(mut commands: Commands, mut date: ResMut<GameDate>) {
     // SAFETY: Will panic if we reach 262000 AD, but we don't expect to get there.
     date.0 = date.0 + Days::new(1);
     commands.trigger(GameDateChanged);
+}
+
+#[derive(Component)]
+pub struct GameSpeed(pub f64);
+
+pub fn listen_speed_buttons(
+    mut input_focus: ResMut<InputFocus>,
+    mut speed: ResMut<Time<Fixed>>,
+    mut q: Query<(Entity, &Interaction, &mut Button, &GameSpeed), Changed<Interaction>>,
+) {
+    for (entity, interaction, mut button, game_speed) in &mut q {
+        info!("interaction");
+        match *interaction {
+            Interaction::Pressed => {
+                input_focus.set(entity);
+                // alert the accessibility system
+                button.set_changed();
+                info!("Game speed {}", game_speed.0);
+                speed.set_timestep_seconds(1.0 / game_speed.0);
+            }
+            Interaction::Hovered => {
+                input_focus.set(entity);
+                button.set_changed();
+            }
+            Interaction::None => {
+                input_focus.clear();
+            }
+        }
+    }
 }

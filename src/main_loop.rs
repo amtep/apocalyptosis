@@ -6,7 +6,7 @@ use crate::{
     regions::RegionsPlugin,
     rng::setup_rng,
     text::LocalizedTextPlugin,
-    time::{advance_game_time, setup_game_time},
+    time::{advance_game_time, listen_speed_buttons, setup_game_time},
     ui::setup_ui,
 };
 
@@ -27,6 +27,7 @@ pub fn main_loop() {
                 (setup_game_time, setup_funds).after(setup_ui),
             ),
         )
+        .add_systems(Update, listen_speed_buttons)
         .add_systems(FixedUpdate, advance_game_time)
         .run();
 }

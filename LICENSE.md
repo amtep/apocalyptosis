@@ -8,6 +8,8 @@ A copy of the license is provided under [LICENSE.GPL3](LICENSE.GPL3).
 
 # Earth background license
 
+Files: `assets/textures/earth_night.jpg`
+
 The nighttime image of the Earth is from NASA's "Blue Marble 2002" image collection.
 Unfortunately the direct link to its source has decayed.
 
@@ -29,6 +31,8 @@ Beyond the NASA Terms, the Visible Earth team requests, but does not require:
 
 ## DancingScript font license
 
+Files: `assets/fonts/DancingScript-Variable.ttf`
+
 Copyright 2016 The Dancing Script Project Authors (https://github.com/googlefonts/DancingScript), with Reserved Font Name 'Dancing Script'.
 
 The DancingScript font is hosted at https://github.com/impallari/DancingScript
@@ -38,6 +42,8 @@ It is licensed under the SIL Open Font License, Version 1.1.
 The specific TTF font file was downloaded from [Fontshare](https://www.fontshare.com/fonts/dancing-script)
 
 ## Lora font license
+
+Files: `assets/fonts/Lora-Variable.ttf`
 
 Copyright 2011 The Lora Project Authors (https://github.com/cyrealtype/Lora-Cyrillic), with Reserved Font Name "Lora".
 
@@ -50,3 +56,15 @@ The specific TTF font file was downloaded from [Fontshare](https://www.fontshare
 ## SIL Open Font License
 
 A copy of the license is provided under [LICENSE.OFL1.1](LICENSE.OFL1.1).
+
+## DejaVu font license
+
+Files: `assets/fonts/DejaVu*.ttf`
+
+Copyright (C) 2003 Bitstream, Inc.
+
+The DejaVu font is licensed under the Bitstream license.
+Bitstream Vera is a trademark of Bitstream, Inc.
+The DejaVu changes are in the public domain.
+
+A copy of the license is provided under [LICENSE.Bitstream](LICENSE.Bitstream).

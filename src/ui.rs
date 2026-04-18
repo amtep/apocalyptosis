@@ -8,10 +8,10 @@ use icu::{
 };
 
 use crate::{
-    constants::ui::{FONT_PATH, MENU_BACKGROUND},
+    constants::ui::{FONT_PATH, MENU_BACKGROUND, UNICODE_FONT_PATH},
     funds::{Funds, FundsChanged},
     text::FluentBundleResource,
-    time::{GameDate, GameDateChanged},
+    time::{GameDate, GameDateChanged, GameSpeed},
 };
 
 #[derive(Component)]
@@ -25,6 +25,7 @@ struct FundsUi;
 
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load(FONT_PATH);
+    let unicode_font = asset_server.load(UNICODE_FONT_PATH);
     commands.spawn(Camera2d);
     commands
         .spawn(Node {
@@ -60,7 +61,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                     // Funds counter
                     parent.spawn((
                         Node {
-                            padding: UiRect::horizontal(px(5)),
+                            padding: UiRect::right(px(5)),
                             ..default()
                         },
                         // will be updated by update_funds_display()
@@ -73,6 +74,10 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                     ));
                     // Game date display
                     parent.spawn((
+                        Node {
+                            padding: UiRect::right(px(5)),
+                            ..default()
+                        },
                         // will be updated by update_game_date_display()
                         Text(String::new()),
                         TextFont {
@@ -80,6 +85,36 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                             ..default()
                         },
                         GameDateUi,
+                    ));
+                    parent.spawn((
+                        Button,
+                        GameSpeed(1.0),
+                        // RIGHTWARDS ARROW
+                        Text("\u{2192}".to_string()),
+                        TextFont {
+                            font: unicode_font.clone(),
+                            ..default()
+                        },
+                    ));
+                    parent.spawn((
+                        Button,
+                        GameSpeed(2.0),
+                        // RIGHTWARDS PAIRED ARROWS
+                        Text("\u{21C9}".to_string()),
+                        TextFont {
+                            font: unicode_font.clone(),
+                            ..default()
+                        },
+                    ));
+                    parent.spawn((
+                        Button,
+                        GameSpeed(5.0),
+                        // THREE RIGHTWARDS ARROWS
+                        Text("\u{21F6}".to_string()),
+                        TextFont {
+                            font: unicode_font.clone(),
+                            ..default()
+                        },
                     ));
                 });
             parent.spawn((
