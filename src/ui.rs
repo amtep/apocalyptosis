@@ -34,11 +34,10 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..Default::default()
         })
         .with_children(|parent| {
+            // Top status bar
             parent
                 .spawn((
                     Node {
-                        display: Display::Flex,
-                        flex_direction: FlexDirection::Row,
                         width: vw(100.0),
                         height: vh(5.0),
                         border: UiRect {
@@ -53,44 +52,35 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                     BackgroundColor(MENU_BACKGROUND.into()),
                 ))
                 .with_children(|parent| {
-                    // Left-aligned status elements
+                    // Separate left-aligned and right-aligned status fields
                     parent.spawn(Node {
-                        display: Display::Flex,
-                        flex_direction: FlexDirection::Row,
-                        align_self: AlignSelf::Start,
-                        align_content: AlignContent::Start,
+                        flex_grow: 1.0,
                         ..default()
                     });
-                    // Right-aligned status elements
-                    parent
-                        .spawn(Node {
-                            display: Display::Flex,
-                            flex_direction: FlexDirection::Row,
-                            align_self: AlignSelf::End,
-                            align_content: AlignContent::End,
+                    // Funds counter
+                    parent.spawn((
+                        Node {
+                            padding: UiRect::horizontal(px(5)),
                             ..default()
-                        })
-                        .with_children(|parent| {
-                            parent.spawn((
-                                // will be updated by update_funds_display()
-                                Text(String::new()),
-                                TextFont {
-                                    font: font.clone(),
-                                    ..default()
-                                },
-                                FundsUi,
-                            ));
-                            // TODO: figure out how to get the date display on the right of the screen.
-                            parent.spawn((
-                                // will be updated by update_game_date_display()
-                                Text(String::new()),
-                                TextFont {
-                                    font: font.clone(),
-                                    ..default()
-                                },
-                                GameDateUi,
-                            ));
-                        });
+                        },
+                        // will be updated by update_funds_display()
+                        Text(String::new()),
+                        TextFont {
+                            font: font.clone(),
+                            ..default()
+                        },
+                        FundsUi,
+                    ));
+                    // Game date display
+                    parent.spawn((
+                        // will be updated by update_game_date_display()
+                        Text(String::new()),
+                        TextFont {
+                            font: font.clone(),
+                            ..default()
+                        },
+                        GameDateUi,
+                    ));
                 });
             parent.spawn((
                 ImageNode {
