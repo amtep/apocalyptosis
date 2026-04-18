@@ -41,7 +41,6 @@ pub fn listen_speed_buttons(
     mut q: Query<(Entity, &Interaction, &mut Button, &GameSpeed), Changed<Interaction>>,
 ) {
     for (entity, interaction, mut button, game_speed) in &mut q {
-        info!("interaction");
         match *interaction {
             Interaction::Pressed => {
                 input_focus.set(entity);
