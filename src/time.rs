@@ -59,3 +59,17 @@ pub fn listen_speed_buttons(
         }
     }
 }
+
+// TODO: sync with the buttons somehow, to avoid duplicating the speed settings.
+pub fn listen_speed_keys(keys: Res<ButtonInput<KeyCode>>, mut speed: ResMut<Time<Fixed>>) {
+    if keys.just_pressed(KeyCode::Digit1) {
+        info!("Game speed 1");
+        speed.set_timestep_seconds(1.0);
+    } else if keys.just_pressed(KeyCode::Digit2) {
+        info!("Game speed 2");
+        speed.set_timestep_seconds(0.5);
+    } else if keys.just_pressed(KeyCode::Digit3) {
+        info!("Game speed 5");
+        speed.set_timestep_seconds(0.2);
+    }
+}
