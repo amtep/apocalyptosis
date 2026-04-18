@@ -1,7 +1,4 @@
-use bevy::{
-    color::palettes::css::{BLACK, WHITE},
-    prelude::*,
-};
+use bevy::{color::palettes::css::WHITE, prelude::*};
 use chrono::Datelike;
 use fluent::FluentArgs;
 use fluent_datetime::{FluentDateTime, length};
@@ -11,7 +8,7 @@ use icu::{
 };
 
 use crate::{
-    constants::FONT_PATH,
+    constants::ui::{FONT_PATH, MENU_BACKGROUND},
     funds::{Funds, FundsChanged},
     text::FluentBundleResource,
     time::{GameDate, GameDateChanged},
@@ -53,7 +50,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                         ..default()
                     },
                     BorderColor::all(WHITE),
-                    BackgroundColor(BLACK.into()),
+                    BackgroundColor(MENU_BACKGROUND.into()),
                 ))
                 .with_children(|parent| {
                     // Left-aligned status elements

@@ -1,15 +1,12 @@
 use std::collections::HashMap;
 
-use bevy::{
-    color::palettes::css::{BLACK, WHITE},
-    prelude::*,
-};
+use bevy::{color::palettes::css::WHITE, prelude::*};
 use bevy_common_assets::toml::TomlAssetPlugin;
 use rand::RngExt;
 use serde_derive::Deserialize;
 
 use crate::{
-    constants::FONT_PATH,
+    constants::ui::{FONT_PATH, MENU_BACKGROUND},
     funds::{Expense, ExpenseCategory},
     main_loop::NewGame,
     regions::RegionUi,
@@ -100,7 +97,7 @@ fn spawn_base(
                 ..default()
             },
             BorderColor::all(WHITE),
-            BackgroundColor(BLACK.into()),
+            BackgroundColor(MENU_BACKGROUND.into()),
         ))
         .with_children(|parent| {
             parent.spawn((

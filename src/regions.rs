@@ -1,14 +1,14 @@
 use std::collections::{HashMap, HashSet};
 
-use bevy::{
-    asset::AsAssetId,
-    color::palettes::css::{BLACK, WHITE},
-    prelude::*,
-};
+use bevy::{asset::AsAssetId, color::palettes::css::WHITE, prelude::*};
 use bevy_common_assets::toml::TomlAssetPlugin;
 use serde::Deserialize;
 
-use crate::{constants::FONT_DISPLAY_PATH, text::TextKey, ui::MapUi};
+use crate::{
+    constants::ui::{FONT_DISPLAY_PATH, MENU_BACKGROUND},
+    text::TextKey,
+    ui::MapUi,
+};
 
 const REGIONS_ASSET_PATH: &str = "data/regions.toml";
 
@@ -95,7 +95,7 @@ fn watch_regions(
                                     ..default()
                                 },
                                 BorderColor::all(WHITE),
-                                BackgroundColor(BLACK.into()),
+                                BackgroundColor(MENU_BACKGROUND.into()),
                             ))
                             .with_children(|parent| {
                                 parent.spawn((
