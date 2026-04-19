@@ -7,7 +7,7 @@ use crate::{
     rng::setup_rng,
     text::LocalizedTextPlugin,
     time::{advance_game_time, listen_speed_buttons, listen_speed_keys, setup_game_time},
-    ui::{setup_ui, update_button_colors},
+    ui::{setup_ui, update_button_colors, update_funds_displays},
 };
 
 #[derive(Event)]
@@ -33,6 +33,7 @@ pub fn main_loop() {
                 update_button_colors,
                 listen_speed_buttons,
                 listen_speed_keys,
+                update_funds_displays,
             ),
         )
         .add_systems(FixedUpdate, advance_game_time)

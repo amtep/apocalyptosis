@@ -12,7 +12,7 @@ use crate::{
         FONT_PATH, MENU_BACKGROUND, MENU_HOVER_BACKGROUND, MENU_PRESSED_BACKGROUND,
         UNICODE_FONT_PATH,
     },
-    funds::{Funds, FundsChanged},
+    funds::{Funds, FundsAmount, FundsChanged},
     text::FluentBundleResource,
     time::{GameDate, GameDateChanged, GameSpeed},
 };
@@ -25,6 +25,10 @@ struct GameDateUi;
 
 #[derive(Component)]
 struct FundsUi;
+
+#[derive(Component)]
+#[require(Text)]
+pub struct FundsDisplay(pub FundsAmount);
 
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load(FONT_PATH);
@@ -173,6 +177,20 @@ fn update_funds_display(
         let mut args = FluentArgs::new();
         args.set("funds", funds.0);
         fluent.format_pattern(key, pattern, Some(&args), &mut text.0);
+    }
+}
+
+pub fn update_funds_displays(
+    mut q: Query<(&mut Text, &FundsDisplay), Added<FundsDisplay>>,
+    fluent: Res<FluentBundleResource>,
+) {
+    let key = "funds";
+    for (mut text, funds) in &mut q {
+        if let Some(pattern) = fluent.get_pattern(key, &text.0) {
+            let mut args = FluentArgs::new();
+            args.set("funds", funds.0);
+            fluent.format_pattern(key, pattern, Some(&args), &mut text.0);
+        }
     }
 }
 
