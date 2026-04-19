@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bevy::{color::palettes::css::WHITE, prelude::*};
+use bevy::prelude::*;
 use bevy_common_assets::toml::TomlAssetPlugin;
 use rand::RngExt;
 use serde_derive::Deserialize;
@@ -96,7 +96,7 @@ fn spawn_base(
                 justify_content: JustifyContent::End,
                 ..default()
             },
-            BorderColor::all(WHITE),
+            BorderColor::all(Color::WHITE),
             BackgroundColor(MENU_BACKGROUND.into()),
         ))
         .with_children(|parent| {

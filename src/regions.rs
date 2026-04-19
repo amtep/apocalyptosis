@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use bevy::{asset::AsAssetId, color::palettes::css::WHITE, prelude::*};
+use bevy::{asset::AsAssetId, prelude::*};
 use bevy_common_assets::toml::TomlAssetPlugin;
 use serde::Deserialize;
 
@@ -94,7 +94,7 @@ fn watch_regions(
                                     align_self: AlignSelf::Center,
                                     ..default()
                                 },
-                                BorderColor::all(WHITE),
+                                BorderColor::all(Color::WHITE),
                                 BackgroundColor(MENU_BACKGROUND.into()),
                             ))
                             .with_children(|parent| {

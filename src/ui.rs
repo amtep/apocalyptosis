@@ -1,8 +1,4 @@
-use bevy::{
-    color::palettes::css::{WHITE, YELLOW},
-    platform::collections::HashMap,
-    prelude::*,
-};
+use bevy::{color::palettes::css::YELLOW, platform::collections::HashMap, prelude::*};
 use chrono::Datelike;
 use fluent::FluentArgs;
 use fluent_datetime::{FluentDateTime, length};
@@ -82,7 +78,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                         },
                         ..default()
                     },
-                    BorderColor::all(WHITE),
+                    BorderColor::all(Color::WHITE),
                     BackgroundColor(MENU_BACKGROUND.into()),
                 ))
                 .with_children(|parent| {
