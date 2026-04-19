@@ -1,4 +1,6 @@
-pub const STARTING_FUNDS: i64 = 5000;
+use crate::funds::FundsAmount;
+
+pub const STARTING_FUNDS: FundsAmount = 5000;
 
 pub mod ui {
     use bevy::color::Srgba;

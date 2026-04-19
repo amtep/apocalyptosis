@@ -2,15 +2,17 @@ use bevy::prelude::*;
 
 use crate::{constants::STARTING_FUNDS, time::GameDateChanged};
 
+pub type FundsAmount = i64;
+
 #[derive(Resource)]
-pub struct Funds(pub i64);
+pub struct Funds(pub FundsAmount);
 
 #[derive(Event)]
 pub struct FundsChanged;
 
 #[derive(Component)]
 #[allow(dead_code)] // TODO
-pub struct Expense(pub i64, pub ExpenseCategory);
+pub struct Expense(pub FundsAmount, pub ExpenseCategory);
 
 #[allow(dead_code)] // TODO
 pub enum ExpenseCategory {
@@ -20,7 +22,7 @@ pub enum ExpenseCategory {
 
 #[derive(Component)]
 #[allow(dead_code)] // TODO
-pub struct Income(pub i64, pub IncomeCategory);
+pub struct Income(pub FundsAmount, pub IncomeCategory);
 
 #[allow(dead_code)] // TODO
 pub enum IncomeCategory {

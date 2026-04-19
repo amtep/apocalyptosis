@@ -7,7 +7,7 @@ use serde_derive::Deserialize;
 
 use crate::{
     constants::ui::{FONT_PATH, MENU_BACKGROUND},
-    funds::{Expense, ExpenseCategory},
+    funds::{Expense, ExpenseCategory, FundsAmount},
     main_loop::NewGame,
     regions::RegionUi,
     rng::RandomSource,
@@ -33,8 +33,8 @@ pub struct BasesAsset(HashMap<String, BaseTypeSettings>);
 #[serde(rename_all = "kebab-case")]
 struct BaseTypeSettings {
     people: isize,
-    cost_per_day: i64,
-    initial_cost: i64,
+    cost_per_day: FundsAmount,
+    initial_cost: FundsAmount,
 }
 
 #[derive(Resource)]
