@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use strum::{EnumIter, IntoStaticStr};
 
 use crate::{constants::STARTING_FUNDS, time::GameDateChanged};
 
@@ -15,6 +16,8 @@ pub struct FundsChanged;
 pub struct Expense(pub FundsAmount, pub ExpenseCategory);
 
 #[allow(dead_code)] // TODO
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, IntoStaticStr)]
+#[strum(serialize_all = "lowercase")]
 pub enum ExpenseCategory {
     Followers,
     Bases,
@@ -25,6 +28,8 @@ pub enum ExpenseCategory {
 pub struct Income(pub FundsAmount, pub IncomeCategory);
 
 #[allow(dead_code)] // TODO
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, IntoStaticStr)]
+#[strum(serialize_all = "lowercase")]
 pub enum IncomeCategory {
     Jobs,
     Crime,

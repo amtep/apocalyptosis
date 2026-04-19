@@ -1,4 +1,8 @@
-use bevy::{color::palettes::css::WHITE, prelude::*};
+use bevy::{
+    color::palettes::css::{WHITE, YELLOW},
+    platform::collections::HashMap,
+    prelude::*,
+};
 use chrono::Datelike;
 use fluent::FluentArgs;
 use fluent_datetime::{FluentDateTime, length};
@@ -6,14 +10,18 @@ use icu::{
     calendar::Date,
     time::{DateTime, Time},
 };
+use pyri_tooltip::{
+    Tooltip, TooltipActivation, TooltipContent, TooltipDismissal, TooltipPlacement, TooltipTransfer,
+};
+use strum::IntoEnumIterator;
 
 use crate::{
     constants::ui::{
         FONT_PATH, MENU_BACKGROUND, MENU_HOVER_BACKGROUND, MENU_PRESSED_BACKGROUND,
         UNICODE_FONT_PATH,
     },
-    funds::{Funds, FundsAmount, FundsChanged},
-    text::FluentBundleResource,
+    funds::{Expense, ExpenseCategory, Funds, FundsAmount, FundsChanged, Income, IncomeCategory},
+    text::{FluentBundleResource, TextKey},
     time::{GameDate, GameDateChanged, GameSpeed},
 };
 
@@ -24,7 +32,10 @@ pub struct MapUi;
 struct GameDateUi;
 
 #[derive(Component)]
-struct FundsUi;
+pub struct FundsUi;
+
+#[derive(Component)]
+pub struct FundsTooltip;
 
 #[derive(Component)]
 #[require(Text)]
@@ -34,6 +45,21 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load(FONT_PATH);
     let unicode_font = asset_server.load(UNICODE_FONT_PATH);
     commands.spawn(Camera2d);
+    let tooltip_content = commands
+        .spawn((
+            FundsTooltip,
+            Node {
+                flex_direction: FlexDirection::Column,
+                border: UiRect::all(px(2)),
+                padding: UiRect::all(px(3)),
+                ..default()
+            },
+            BorderColor::all(YELLOW),
+            BackgroundColor(MENU_BACKGROUND.into()),
+            Visibility::Hidden,
+            ZIndex(1),
+        ))
+        .id();
     commands
         .spawn(Node {
             flex_direction: FlexDirection::Column,
@@ -78,6 +104,17 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                             ..default()
                         },
                         FundsUi,
+                        Tooltip {
+                            content: TooltipContent::Custom(tooltip_content),
+                            placement: TooltipPlacement::CURSOR,
+                            activation: TooltipActivation::default(),
+                            dismissal: TooltipDismissal {
+                                // Not sure what units these are
+                                on_distance: 400.0,
+                                on_click: false,
+                            },
+                            transfer: TooltipTransfer::default(),
+                        },
                     ));
                     // Game date display
                     parent.spawn((
@@ -140,6 +177,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
         });
     commands.add_observer(update_game_date_display);
     commands.add_observer(update_funds_display);
+    commands.add_observer(update_funds_tooltip);
 }
 
 fn update_game_date_display(
@@ -208,6 +246,120 @@ pub fn update_button_colors(
             Interaction::None => {
                 *background = MENU_BACKGROUND.into();
             }
+        }
+    }
+}
+
+fn update_funds_tooltip(
+    _: On<GameDateChanged>,
+    mut commands: Commands,
+    incomes: Query<&Income>,
+    expenses: Query<&Expense>,
+    tooltip: Single<(Entity, Option<&Children>), With<FundsTooltip>>,
+    asset_server: Res<AssetServer>,
+) {
+    fn income_expense_row(
+        mut commands: Commands,
+        parent: Entity,
+        text_font: &TextFont,
+        category: String,
+        count: usize,
+        funds: FundsAmount,
+    ) {
+        commands
+            .spawn((
+                // Node to represent the row
+                Node { ..default() },
+                ChildOf(parent),
+            ))
+            .with_children(|parent| {
+                parent.spawn((Text::new(format!("{count}x ")), text_font.clone()));
+                parent.spawn((
+                    Text::new(String::new()),
+                    TextKey(category),
+                    text_font.clone(),
+                ));
+                parent.spawn(Node {
+                    flex_grow: 1.0,
+                    padding: UiRect::left(px(5)),
+                    ..default()
+                });
+                parent.spawn((FundsDisplay(funds), text_font.clone()));
+            });
+    }
+    let (parent, children) = *tooltip;
+    let font = asset_server.load(FONT_PATH);
+
+    // Completely refresh the tooltip contents
+    if let Some(children) = children {
+        for entity in children {
+            commands.entity(*entity).despawn();
+        }
+    }
+    let text_font = TextFont { font, ..default() };
+    let hrule = (
+        Node {
+            min_width: percent(80),
+            min_height: px(1),
+            margin: UiRect::vertical(px(5)),
+            ..default()
+        },
+        BackgroundColor(YELLOW.into()),
+        ChildOf(parent),
+    );
+    commands.spawn((
+        Text::new(String::new()),
+        TextKey("income-tooltip-header".to_string()),
+        text_font.clone(),
+        ChildOf(parent),
+    ));
+    commands.spawn(hrule.clone());
+
+    let mut income_ledger: HashMap<IncomeCategory, (i64, usize)> = HashMap::default();
+    for Income(amount, category) in incomes {
+        let (funds, count) = income_ledger.entry(*category).or_default();
+        *funds += amount;
+        *count += 1
+    }
+    for category in IncomeCategory::iter() {
+        if let Some((funds, count)) = income_ledger.get(&category) {
+            let category: &str = category.into();
+            let category = format!("income-category-{category}");
+            income_expense_row(
+                commands.reborrow(),
+                parent,
+                &text_font,
+                category,
+                *count,
+                *funds,
+            );
+        }
+    }
+    commands.spawn((
+        Text::new(String::new()),
+        TextKey("expense-tooltip-header".to_string()),
+        text_font.clone(),
+        ChildOf(parent),
+    ));
+    commands.spawn(hrule);
+    let mut expense_ledger: HashMap<ExpenseCategory, (i64, usize)> = HashMap::default();
+    for Expense(amount, category) in expenses {
+        let (funds, count) = expense_ledger.entry(*category).or_default();
+        *funds += amount;
+        *count += 1
+    }
+    for category in ExpenseCategory::iter() {
+        if let Some((funds, count)) = expense_ledger.get(&category) {
+            let category: &str = category.into();
+            let category = format!("expense-category-{category}");
+            income_expense_row(
+                commands.reborrow(),
+                parent,
+                &text_font,
+                category,
+                *count,
+                *funds,
+            );
         }
     }
 }

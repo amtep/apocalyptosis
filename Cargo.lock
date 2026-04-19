@@ -184,9 +184,12 @@ dependencies = [
  "fluent-syntax",
  "icu",
  "line-numbers",
+ "pyri_tooltip",
  "rand 0.10.1",
  "serde",
  "serde_derive",
+ "strum",
+ "strum_macros",
  "thiserror 2.0.18",
  "unic-langid",
 ]
@@ -4638,6 +4641,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5a041e753da8b807c9255f28de81879c78c876392ff2469cde94799b2896b9d"
 
 [[package]]
+name = "pyri_tooltip"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d9600de6bc2e669aead828cd3efa2eed2c1d68d81497544db22f070d3a9d6ee"
+dependencies = [
+ "bevy_app",
+ "bevy_asset",
+ "bevy_camera",
+ "bevy_color",
+ "bevy_ecs",
+ "bevy_math",
+ "bevy_reflect",
+ "bevy_sprite",
+ "bevy_text",
+ "bevy_time",
+ "bevy_transform",
+ "bevy_ui",
+ "bevy_window",
+ "tiny_bail",
+]
+
+[[package]]
 name = "quick-xml"
 version = "0.39.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5181,6 +5206,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6637bab7722d379c8b41ba849228d680cc12d0a45ba1fa2b48f2a30577a06731"
 
 [[package]]
+name = "strum"
+version = "0.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9628de9b8791db39ceda2b119bbe13134770b56c138ec1d3af810d045c04f9bd"
+dependencies = [
+ "strum_macros",
+]
+
+[[package]]
+name = "strum_macros"
+version = "0.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab85eea0270ee17587ed4156089e10b9e6880ee688791d45a905f5b1ca36f664"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "svg_fmt"
 version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5338,6 +5384,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "tiny_bail"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1ba9f3c9f90a216158fbb3552b4e3352739f2a9df25c9ba63690f3125b76e027"
+dependencies = [
+ "tracing",
+]
+
+[[package]]
 name = "tinystr"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5441,6 +5496,7 @@ version = "0.1.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100"
 dependencies = [
+ "log",
  "pin-project-lite",
  "tracing-attributes",
  "tracing-core",

@@ -1,4 +1,5 @@
 use bevy::{audio::AudioPlugin, prelude::*};
+use pyri_tooltip::TooltipPlugin;
 
 use crate::{
     bases::BasesPlugin,
@@ -16,6 +17,7 @@ pub struct NewGame;
 pub fn main_loop() {
     App::new()
         .add_plugins(DefaultPlugins.build().disable::<AudioPlugin>())
+        .add_plugins(TooltipPlugin::default())
         .add_plugins(RegionsPlugin)
         .add_plugins(BasesPlugin)
         .add_plugins(LocalizedTextPlugin)
