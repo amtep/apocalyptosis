@@ -4,9 +4,6 @@ version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
 
-[features]
-debug = ["bevy/dev"]
-
 [dependencies]
 bevy_common_assets = { version = "0.16.0", features = ["toml"] }
 chrono = { version = "0.4.44", default-features = false, features = ["std"] }
@@ -29,13 +26,14 @@ default-features = false
 features = [
     # This pulls in a lot of default features, aimed at 2D games
     "2d",
-    # This means assets get hotloaded when the files change.
-    "file_watcher",
     # This is because the main map background asset is a jpg
     "jpeg",
     # Only x11 support is default on linux
     "wayland"
 ]
+
+[features]
+dev = ["bevy/dev"]
 
 [profile.dev.package."*"]
 opt-level = 3

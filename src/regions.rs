@@ -1,114 +1,90 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
-use bevy::{asset::AsAssetId, prelude::*};
+use bevy::prelude::*;
 use bevy_common_assets::toml::TomlAssetPlugin;
 use serde::Deserialize;
 
-use crate::{
-    constants::ui::{FONT_DISPLAY_PATH, MENU_BACKGROUND},
-    text::TextKey,
-    ui::MapUi,
-};
+use crate::state::{GameState, MainSetupSet};
 
-const REGIONS_ASSET_PATH: &str = "data/regions.toml";
+const REGIONS_ASSET_PATH: &str = "data/defines.region.toml";
 
 pub struct RegionsPlugin;
 
 impl Plugin for RegionsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(TomlAssetPlugin::<RegionsAsset>::new(&["toml"]))
-            .add_systems(Startup, setup_regions)
-            .add_systems(Update, watch_regions);
+        app.add_plugins(TomlAssetPlugin::<RegionsAsset>::new(&["region.toml"]))
+            .add_systems(OnEnter(GameState::Load), setup_load)
+            .add_systems(OnExit(GameState::Load), cleanup_load)
+            .add_systems(
+                OnEnter(GameState::Main),
+                setup_main.in_set(MainSetupSet::Regions),
+            )
+            .add_systems(FixedUpdate, reload.run_if(not(in_state(GameState::Load))));
     }
 }
 
 #[derive(Deserialize, Asset, TypePath)]
-pub struct RegionsAsset(HashMap<String, RegionSettings>);
+struct RegionsAsset(HashMap<String, RegionSettings>);
 
-#[derive(Deserialize)]
-struct RegionSettings {
-    x: f32,
-    y: f32,
+#[derive(Resource)]
+struct RegionsHandle(Handle<RegionsAsset>);
+
+#[derive(Debug, Deserialize, Clone, Copy)]
+pub struct RegionSettings {
+    pub x: f32,
+    pub y: f32,
 }
 
 #[derive(Component)]
-struct Regions(Handle<RegionsAsset>);
+pub struct Region {
+    pub name: String,
+    pub settings: RegionSettings,
+}
 
-impl AsAssetId for Regions {
-    type Asset = RegionsAsset;
-    fn as_asset_id(&self) -> AssetId<Self::Asset> {
-        self.0.id()
+fn setup_load(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(RegionsHandle(asset_server.load(REGIONS_ASSET_PATH)));
+}
+
+fn cleanup_load(mut messages: ResMut<Messages<AssetEvent<RegionsAsset>>>) {
+    messages.clear();
+}
+
+fn setup_main(
+    mut commands: Commands,
+    regions_handle: Res<RegionsHandle>,
+    regions_asset: Res<Assets<RegionsAsset>>,
+) {
+    let regions = &regions_asset.get(regions_handle.0.id()).unwrap().0;
+    for (name, &settings) in regions.iter() {
+        commands.spawn(Region {
+            name: name.to_owned(),
+            settings,
+        });
     }
 }
 
-#[derive(Component)]
-pub struct RegionUi(String);
+#[derive(Event)]
+pub struct RegionsReloadedEvent;
 
-fn setup_regions(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(Regions(asset_server.load(REGIONS_ASSET_PATH)));
-}
-
-fn watch_regions(
+fn reload(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    assets: Res<Assets<RegionsAsset>>,
-    regions: Single<&Regions, AssetChanged<Regions>>,
-    mut q_ui_node: Query<(Entity, &mut Node, &RegionUi)>,
-    mapui: Single<Entity, With<MapUi>>,
+    mut reader: MessageReader<AssetEvent<RegionsAsset>>,
+    mut regions: Query<&mut Region>,
+    regions_handle: Res<RegionsHandle>,
+    regions_asset: Res<Assets<RegionsAsset>>,
 ) {
-    info!("Regions changed");
-    if let Some(settings) = assets.get(&regions.0) {
-        let mut seen: HashSet<&str> = HashSet::default();
-        for (region_e, mut node, region) in &mut q_ui_node {
-            if let Some(region_settings) = settings.0.get(&region.0) {
-                seen.insert(&region.0);
-                node.left = percent(region_settings.x);
-                node.top = percent(region_settings.y);
-            } else {
-                commands.entity(region_e).despawn();
+    if !reader.is_empty() {
+        info!("regions reloaded");
+
+        let regions_map = &regions_asset.get(regions_handle.0.id()).unwrap().0;
+
+        for mut region in regions.iter_mut() {
+            if let Some(settings) = regions_map.get(&region.name) {
+                region.settings = *settings;
             }
         }
-        let font = asset_server.load(FONT_DISPLAY_PATH);
-        for (key, region_settings) in &settings.0 {
-            if !seen.contains(&key.as_ref()) {
-                let text_key = format!("region-{key}");
-                commands
-                    .spawn((
-                        Node {
-                            flex_direction: FlexDirection::Column,
-                            position_type: PositionType::Absolute,
-                            left: percent(region_settings.x),
-                            top: percent(region_settings.y),
-                            ..default()
-                        },
-                        RegionUi(key.clone()),
-                        ChildOf(*mapui),
-                    ))
-                    .with_children(|parent| {
-                        parent
-                            .spawn((
-                                Node {
-                                    border: UiRect::all(px(2)),
-                                    border_radius: BorderRadius::all(px(10)),
-                                    padding: UiRect::all(px(10)),
-                                    align_self: AlignSelf::Center,
-                                    ..default()
-                                },
-                                BorderColor::all(Color::WHITE),
-                                BackgroundColor(MENU_BACKGROUND.into()),
-                            ))
-                            .with_children(|parent| {
-                                parent.spawn((
-                                    Text::new("".to_string()),
-                                    TextKey(text_key),
-                                    TextFont {
-                                        font: font.clone(),
-                                        ..default()
-                                    },
-                                ));
-                            });
-                    });
-            }
-        }
+
+        commands.trigger(RegionsReloadedEvent);
+        reader.clear();
     }
 }

@@ -1,7 +1,23 @@
 use bevy::{input_focus::InputFocus, prelude::*};
 use chrono::{Days, NaiveDate};
 
-use crate::main_loop::NewGame;
+use crate::state::{GameState, MainSetupSet};
+
+pub struct DatePlugin;
+
+impl Plugin for DatePlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(
+            OnEnter(GameState::Main),
+            setup.in_set(MainSetupSet::Default),
+        )
+        .add_systems(FixedUpdate, fixed_update.run_if(in_state(GameState::Main)))
+        .add_systems(
+            Update,
+            (update_speed_buttons, listen_speed_keys).run_if(in_state(GameState::Main)),
+        );
+    }
+}
 
 #[derive(Resource)]
 pub struct GameDate(pub NaiveDate);
@@ -12,30 +28,24 @@ impl Default for GameDate {
     }
 }
 
-pub fn setup_game_time(mut commands: Commands) {
-    commands.init_resource::<InputFocus>();
+pub fn setup(mut commands: Commands) {
     commands.insert_resource(Time::<Fixed>::from_seconds(1.0));
     commands.insert_resource(GameDate::default());
-    // TODO: can't update game time UI yet because texts have not yet loaded.
 }
 
 #[derive(Event)]
-pub struct GameDateChanged;
+pub struct GameDateChangedEvent;
 
-pub fn advance_game_time(mut commands: Commands, mut date: ResMut<GameDate>) {
-    // TODO: this should instead be triggered after everything is loaded.
-    if (date.0 - GameDate::default().0).num_days() == 1 {
-        commands.trigger(NewGame);
-    }
-    // SAFETY: Will panic if we reach 262000 AD, but we don't expect to get there.
+pub fn fixed_update(mut commands: Commands, mut date: ResMut<GameDate>) {
+    // We don't expect to reach 262000 AD
     date.0 = date.0 + Days::new(1);
-    commands.trigger(GameDateChanged);
+    commands.trigger(GameDateChangedEvent);
 }
 
 #[derive(Component)]
 pub struct GameSpeed(pub f64);
 
-pub fn listen_speed_buttons(
+pub fn update_speed_buttons(
     mut input_focus: ResMut<InputFocus>,
     mut speed: ResMut<Time<Fixed>>,
     mut q: Query<(Entity, &Interaction, &mut Button, &GameSpeed), Changed<Interaction>>,
