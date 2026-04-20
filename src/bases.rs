@@ -22,7 +22,7 @@ impl Plugin for BasesPlugin {
             .add_systems(OnEnter(GameState::Load), setup_load)
             .add_systems(
                 OnEnter(GameState::Main),
-                setup_main.in_set(MainSetupSet::Late),
+                setup_main.in_set(MainSetupSet::Bases),
             );
     }
 }
@@ -45,6 +45,10 @@ struct BasetypeSettings {
 fn setup_load(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(BasetypesHandle(asset_server.load(BASETYPES_ASSET_PATH)));
 }
+
+/// A marker component for bases in the game state.
+#[derive(Component)]
+pub struct Base;
 
 /// The `String` is the key for the base type in the `Basetypes` asset.
 #[derive(Component)]
@@ -75,6 +79,7 @@ fn setup_main(
     let apartment = base_types.get_key_value("apartment").unwrap();
     let apartment = commands
         .spawn((
+            Base,
             Basetype {
                 name: apartment.0.clone(),
                 settings: *apartment.1,

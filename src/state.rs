@@ -14,6 +14,7 @@ impl Plugin for StatePlugin {
                     MainSetupSet::Default,
                     MainSetupSet::Regions,
                     MainSetupSet::Bases,
+                    MainSetupSet::Followers,
                     MainSetupSet::Ui,
                     MainSetupSet::Late,
                 )
@@ -34,6 +35,7 @@ pub enum MainSetupSet {
     Default,
     Regions,
     Bases,
+    Followers,
     Ui,
     Late,
 }
