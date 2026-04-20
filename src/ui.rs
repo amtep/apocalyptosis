@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use bevy::{color::palettes::css::YELLOW, input_focus::InputFocus, prelude::*};
+use bevy::{
+    camera::ScalingMode, color::palettes::css::YELLOW, input_focus::InputFocus, prelude::*,
+};
+use bevy_aspect_ratio_mask::Hud;
 use chrono::Datelike;
 use fluent::FluentArgs;
 use fluent_datetime::{FluentDateTime, length};
@@ -17,7 +20,7 @@ use crate::{
     bases::{Basetype, SpawnBaseEvent},
     constants::ui::{
         FONT_DISPLAY_PATH, FONT_PATH, MENU_BACKGROUND, MENU_HOVER_BACKGROUND,
-        MENU_PRESSED_BACKGROUND, UNICODE_FONT_PATH,
+        MENU_PRESSED_BACKGROUND, PX_HEIGHT, PX_WIDTH, UNICODE_FONT_PATH,
     },
     funds::{
         Expense, ExpenseCategory, Funds, FundsAmount, FundsChangedEvent, Income, IncomeCategory,
@@ -86,7 +89,17 @@ fn setup_fonts(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2d);
+    commands.spawn((
+        Camera2d,
+        // The `AspectRatioPlugin` needs this
+        Projection::from(OrthographicProjection {
+            scaling_mode: ScalingMode::AutoMin {
+                min_width: PX_WIDTH,
+                min_height: PX_HEIGHT,
+            },
+            ..OrthographicProjection::default_2d()
+        }),
+    ));
     commands.insert_resource(InputFocus::default());
 }
 
@@ -95,6 +108,7 @@ fn setup_map(
     font_handle: Res<FontHandle>,
     unicode_font_handle: Res<UnicodeFontHandle>,
     asset_server: Res<AssetServer>,
+    hud: Res<Hud>,
 ) {
     let tooltip_content = commands
         .spawn((
@@ -112,133 +126,131 @@ fn setup_map(
         ))
         .id();
 
-    commands
-        .spawn(Node {
-            flex_direction: FlexDirection::Column,
-            width: vw(100.0),
-            height: vh(100.0),
-            ..Default::default()
-        })
-        .with_children(|parent| {
-            // Top status bar
-            parent
-                .spawn((
-                    Node {
-                        width: vw(100.0),
-                        height: vh(5.0),
-                        border: UiRect {
-                            left: vw(0.0),
-                            right: vw(0.0),
-                            top: vh(0.5),
-                            bottom: vh(0.5),
+    commands.entity(hud.0).with_children(|parent| {
+        parent
+            .spawn(Node {
+                flex_direction: FlexDirection::Column,
+                width: percent(100.0),
+                height: percent(100.0),
+                position_type: PositionType::Absolute,
+                ..default()
+            })
+            .with_children(|parent| {
+                // Top status bar
+                parent
+                    .spawn((
+                        Node {
+                            width: percent(100.0),
+                            border: UiRect::vertical(px(2)),
+                            align_items: AlignItems::FlexEnd,
+                            justify_content: JustifyContent::Center,
+                            ..default()
                         },
-                        align_items: AlignItems::FlexEnd,
+                        BorderColor::all(Color::WHITE),
+                        BackgroundColor(MENU_BACKGROUND.into()),
+                    ))
+                    .with_children(|parent| {
+                        // Funds counter
+                        parent.spawn((
+                            Node {
+                                padding: UiRect::right(px(5)),
+                                ..default()
+                            },
+                            // will be updated by on_funds_changed
+                            TextFont {
+                                font: font_handle.0.clone(),
+                                ..default()
+                            },
+                            TextKey::new_no_args("funds-display"),
+                            FundsUi,
+                            Tooltip {
+                                content: TooltipContent::Custom(tooltip_content),
+                                placement: TooltipPlacement::CURSOR,
+                                activation: TooltipActivation::default(),
+                                dismissal: TooltipDismissal {
+                                    // Not sure what units these are
+                                    on_distance: 400.0,
+                                    on_click: false,
+                                },
+                                transfer: TooltipTransfer::default(),
+                            },
+                        ));
+                        // Game date display
+                        parent.spawn((
+                            Node {
+                                padding: UiRect::right(px(5)),
+                                ..default()
+                            },
+                            // will be updated by on_game_date_changed
+                            TextFont {
+                                font: font_handle.0.clone(),
+                                ..default()
+                            },
+                            TextKey::new_no_args("game-date-display"),
+                            GameDateUi,
+                        ));
+                        // Separate left-aligned and right-aligned status fields
+                        parent.spawn(Node {
+                            flex_grow: 1.0,
+                            ..default()
+                        });
+                        parent.spawn((
+                            Button,
+                            GameSpeedAction::TogglePause,
+                            // 23F8 DOUBLE VERTICAL BAR would be better but is not in the font.
+                            // DOUBLE VERTICAL LINE
+                            Text("\u{2016}".to_string()),
+                            TextFont {
+                                font: unicode_font_handle.0.clone(),
+                                ..default()
+                            },
+                        ));
+                        parent.spawn((
+                            Button,
+                            GameSpeedAction::SetSpeed(1.0),
+                            // RIGHTWARDS ARROW
+                            Text("\u{2192}".to_string()),
+                            TextFont {
+                                font: unicode_font_handle.0.clone(),
+                                ..default()
+                            },
+                        ));
+                        parent.spawn((
+                            Button,
+                            GameSpeedAction::SetSpeed(2.0),
+                            // RIGHTWARDS PAIRED ARROWS
+                            Text("\u{21C9}".to_string()),
+                            TextFont {
+                                font: unicode_font_handle.0.clone(),
+                                ..default()
+                            },
+                        ));
+                        parent.spawn((
+                            Button,
+                            GameSpeedAction::SetSpeed(5.0),
+                            // THREE RIGHTWARDS ARROWS
+                            Text("\u{21F6}".to_string()),
+                            TextFont {
+                                font: unicode_font_handle.0.clone(),
+                                ..default()
+                            },
+                        ));
+                    });
+                parent.spawn((
+                    ImageNode {
+                        image: asset_server.load("textures/earth_night.jpg"),
+                        image_mode: NodeImageMode::Stretch,
                         ..default()
                     },
-                    BorderColor::all(Color::WHITE),
-                    BackgroundColor(MENU_BACKGROUND.into()),
-                ))
-                .with_children(|parent| {
-                    // Funds counter
-                    parent.spawn((
-                        Node {
-                            padding: UiRect::right(px(5)),
-                            ..default()
-                        },
-                        // will be updated by on_funds_changed
-                        TextFont {
-                            font: font_handle.0.clone(),
-                            ..default()
-                        },
-                        TextKey::new_no_args("funds-display"),
-                        FundsUi,
-                        Tooltip {
-                            content: TooltipContent::Custom(tooltip_content),
-                            placement: TooltipPlacement::CURSOR,
-                            activation: TooltipActivation::default(),
-                            dismissal: TooltipDismissal {
-                                // Not sure what units these are
-                                on_distance: 400.0,
-                                on_click: false,
-                            },
-                            transfer: TooltipTransfer::default(),
-                        },
-                    ));
-                    // Game date display
-                    parent.spawn((
-                        Node {
-                            padding: UiRect::right(px(5)),
-                            ..default()
-                        },
-                        // will be updated by on_game_date_changed
-                        TextFont {
-                            font: font_handle.0.clone(),
-                            ..default()
-                        },
-                        TextKey::new_no_args("game-date-display"),
-                        GameDateUi,
-                    ));
-                    // Separate left-aligned and right-aligned status fields
-                    parent.spawn(Node {
-                        flex_grow: 1.0,
+                    Node {
+                        width: percent(100.0),
+                        height: percent(95.0),
                         ..default()
-                    });
-                    parent.spawn((
-                        Button,
-                        GameSpeedAction::TogglePause,
-                        // 23F8 DOUBLE VERTICAL BAR would be better but is not in the font.
-                        // DOUBLE VERTICAL LINE
-                        Text("\u{2016}".to_string()),
-                        TextFont {
-                            font: unicode_font_handle.0.clone(),
-                            ..default()
-                        },
-                    ));
-                    parent.spawn((
-                        Button,
-                        GameSpeedAction::SetSpeed(1.0),
-                        // RIGHTWARDS ARROW
-                        Text("\u{2192}".to_string()),
-                        TextFont {
-                            font: unicode_font_handle.0.clone(),
-                            ..default()
-                        },
-                    ));
-                    parent.spawn((
-                        Button,
-                        GameSpeedAction::SetSpeed(2.0),
-                        // RIGHTWARDS PAIRED ARROWS
-                        Text("\u{21C9}".to_string()),
-                        TextFont {
-                            font: unicode_font_handle.0.clone(),
-                            ..default()
-                        },
-                    ));
-                    parent.spawn((
-                        Button,
-                        GameSpeedAction::SetSpeed(5.0),
-                        // THREE RIGHTWARDS ARROWS
-                        Text("\u{21F6}".to_string()),
-                        TextFont {
-                            font: unicode_font_handle.0.clone(),
-                            ..default()
-                        },
-                    ));
-                });
-            parent.spawn((
-                ImageNode {
-                    image: asset_server.load("textures/earth_night.jpg"),
-                    image_mode: NodeImageMode::Stretch,
-                    ..default()
-                },
-                Node {
-                    width: vw(100.0),
-                    height: vh(95.0),
-                    ..default()
-                },
-                MapUi,
-            ));
-        });
+                    },
+                    MapUi,
+                ));
+            });
+    });
 
     commands.add_observer(on_game_date_changed_funds_tooltip);
     commands.add_observer(on_funds_changed);

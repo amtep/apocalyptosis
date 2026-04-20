@@ -1,9 +1,18 @@
 use bevy::prelude::*;
+use bevy_aspect_ratio_mask::{AspectRatioMask, AspectRatioPlugin, Resolution};
 use pyri_tooltip::TooltipPlugin;
 
 use crate::{
-    bases::BasesPlugin, followers::FollowersPlugin, funds::FundsPlugin, regions::RegionsPlugin,
-    rng::RngPlugin, state::StatePlugin, text::TextPlugin, time::TimePlugin, ui::UiPlugin,
+    bases::BasesPlugin,
+    constants::ui::{PX_HEIGHT, PX_WIDTH},
+    followers::FollowersPlugin,
+    funds::FundsPlugin,
+    regions::RegionsPlugin,
+    rng::RngPlugin,
+    state::StatePlugin,
+    text::TextPlugin,
+    time::TimePlugin,
+    ui::UiPlugin,
 };
 
 pub fn main_loop() {
@@ -17,6 +26,13 @@ pub fn main_loop() {
                 ..default()
             }),
             TooltipPlugin::default(),
+            AspectRatioPlugin {
+                resolution: Resolution {
+                    width: PX_WIDTH,
+                    height: PX_HEIGHT,
+                },
+                mask: AspectRatioMask::default(),
+            },
             StatePlugin,
             TextPlugin,
             RegionsPlugin,
