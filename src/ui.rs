@@ -24,7 +24,7 @@ use crate::{
     },
     regions::{Region, RegionsReloadedEvent},
     state::{GameState, MainSetupSet},
-    text::{FluentBundleResource, TextKey},
+    text::{FluentBundleWrapper, TextKey},
     time::{GameDate, GameDateChangedEvent, GameSpeed},
 };
 
@@ -240,7 +240,7 @@ fn on_game_date_changed(
     _: On<GameDateChangedEvent>,
     date: Res<GameDate>,
     mut text: Single<(&mut Text, &TextKey), With<GameDateUi>>,
-    bundle: Res<FluentBundleResource>,
+    bundle: Res<FluentBundleWrapper>,
 ) {
     // Do a little dance
     let date = Date::try_new_iso(date.0.year(), date.0.month() as u8, date.0.day() as u8).unwrap();
@@ -259,7 +259,7 @@ fn on_funds_changed(
     _: On<FundsChangedEvent>,
     funds: Res<Funds>,
     mut text: Single<(&mut Text, &TextKey), With<FundsUi>>,
-    bundle: Res<FluentBundleResource>,
+    bundle: Res<FluentBundleWrapper>,
 ) {
     let mut args = FluentArgs::new();
     args.set("funds", funds.0);
@@ -271,7 +271,7 @@ fn setup_regions(
     map_ui: Single<Entity, With<MapUi>>,
     regions: Query<(Entity, &Region)>,
     font_handle: Res<DisplayFontHandle>,
-    bundle: Res<FluentBundleResource>,
+    bundle: Res<FluentBundleWrapper>,
 ) {
     for (entity, region) in regions.iter() {
         let Region { name, settings } = region;
@@ -338,7 +338,7 @@ fn on_spawn_base(
     regions: Query<(&Region, &View)>,
     base_types: Query<&Basetype>,
     font_handle: Res<FontHandle>,
-    bundle: Res<FluentBundleResource>,
+    bundle: Res<FluentBundleWrapper>,
 ) {
     let region_ui = regions.get(event.region).unwrap().1.0;
     let base_type = base_types.get(event.base_type).unwrap();
@@ -369,7 +369,7 @@ fn on_spawn_base(
 
 fn update_funds_displays(
     mut q: Query<(&mut Text, &FundsDisplay), Changed<FundsDisplay>>,
-    bundle: Res<FluentBundleResource>,
+    bundle: Res<FluentBundleWrapper>,
 ) {
     for (mut text, funds) in &mut q {
         let mut args = FluentArgs::new();
@@ -403,7 +403,7 @@ fn on_game_date_changed_funds_tooltip(
     expenses: Query<&Expense>,
     tooltip: Single<Entity, With<FundsTooltip>>,
     font_handle: Res<FontHandle>,
-    bundle: Res<FluentBundleResource>,
+    bundle: Res<FluentBundleWrapper>,
 ) {
     fn income_expense_row(
         mut commands: Commands,
@@ -412,7 +412,7 @@ fn on_game_date_changed_funds_tooltip(
         category: String,
         count: usize,
         funds: FundsAmount,
-        bundle: &Res<FluentBundleResource>,
+        bundle: &Res<FluentBundleWrapper>,
     ) {
         commands
             .spawn((

@@ -35,7 +35,7 @@ impl Plugin for TextPlugin {
 pub struct TextKey(String);
 
 impl TextKey {
-    pub fn new<S: Into<String>>(key: S, bundle: &FluentBundleResource) -> (Self, Text) {
+    pub fn new<S: Into<String>>(key: S, bundle: &FluentBundleWrapper) -> (Self, Text) {
         let text_key = Self(key.into());
         let text = Text::new(bundle.get(&text_key.0, None));
         (text_key, text)
@@ -49,7 +49,7 @@ impl TextKey {
 
     fn new_args<S: Into<String>>(
         key: S,
-        bundle: &FluentBundleResource,
+        bundle: &FluentBundleWrapper,
         args: &FluentArgs<'_>,
     ) -> (Self, Text) {
         let text_key = Self(key.into());
@@ -57,7 +57,7 @@ impl TextKey {
         (text_key, text)
     }
 
-    pub fn get(&self, bundle: &FluentBundleResource, args: &FluentArgs<'_>) -> String {
+    pub fn get(&self, bundle: &FluentBundleWrapper, args: &FluentArgs<'_>) -> String {
         bundle.get(&self.0, Some(args))
     }
 }
@@ -115,9 +115,9 @@ impl AssetLoader for FluentResourceAssetLoader {
 struct FluentResourceAsset(Arc<FluentResource>);
 
 #[derive(Resource)]
-pub struct FluentBundleResource(FluentBundle<Arc<FluentResource>>, bool);
+pub struct FluentBundleWrapper(FluentBundle<Arc<FluentResource>>, bool);
 
-impl FluentBundleResource {
+impl FluentBundleWrapper {
     pub fn get(&self, key: &str, args: Option<&FluentArgs<'_>>) -> String {
         let Some(msg) = self.0.get_message(key) else {
             error!("no message with key {key} exists");
@@ -147,7 +147,7 @@ struct FluentFolder(Handle<LoadedFolder>);
 struct LocalesReloadedEvent;
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.insert_resource(FluentBundleResource(
+    commands.insert_resource(FluentBundleWrapper(
         FluentBundle::new_concurrent(vec![langid!("en-US")]),
         false,
     ));
@@ -155,7 +155,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn new_bundle<'a, I: Iterator<Item = &'a Arc<FluentResource>>>(
-    bundle_resource: &FluentBundleResource,
+    bundle_resource: &FluentBundleWrapper,
     resource_iter: I,
 ) -> Option<FluentBundle<Arc<FluentResource>>> {
     let mut new_bundle = FluentBundle::new_concurrent(bundle_resource.0.locales.clone());
@@ -183,7 +183,7 @@ fn update(
     asset_server: Res<AssetServer>,
     folder: Res<FluentFolder>,
     fluent_resource_assets: Res<Assets<FluentResourceAsset>>,
-    mut bundle: ResMut<FluentBundleResource>,
+    mut bundle: ResMut<FluentBundleWrapper>,
 ) {
     if !bundle.1
         && matches!(
@@ -213,7 +213,7 @@ fn reload(
     mut commands: Commands,
     mut reader: MessageReader<AssetEvent<FluentResourceAsset>>,
     fluent_resource_assets: Res<Assets<FluentResourceAsset>>,
-    mut bundle: ResMut<FluentBundleResource>,
+    mut bundle: ResMut<FluentBundleWrapper>,
 ) {
     if bundle.1 && !reader.is_empty() {
         info!("fluent bundle reloaded");
