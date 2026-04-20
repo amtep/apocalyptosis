@@ -38,7 +38,7 @@ struct BasetypeSettings {
 }
 
 #[derive(Resource)]
-pub struct BasetypesHandle(Handle<BasetypesAsset>);
+struct BasetypesHandle(Handle<BasetypesAsset>);
 
 fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(BasetypesHandle(
@@ -51,15 +51,15 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
 /// Marker for a base in a region.
 /// The base entity will be a child of the region entity.
 #[derive(Component)]
-pub struct Base;
+struct Base;
 
 /// The `String` is the key for the base type in the `Basetypes` asset.
 #[derive(Component)]
 #[allow(dead_code)] // TODO
-pub struct Basetype(pub String);
+struct Basetype(String);
 
 #[derive(Event)]
-pub struct SpawnBaseDirective {
+struct SpawnBaseDirective {
     base_type: String,
     region: Entity,
 }
