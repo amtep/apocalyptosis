@@ -37,3 +37,7 @@ features = [
 
 [profile.dev.package."*"]
 opt-level = 3
+
+[lints.clippy]
+# The Query system-parameters often triggers this, but they are self-documenting.
+type_complexity = "allow"
