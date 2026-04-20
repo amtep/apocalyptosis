@@ -1,7 +1,22 @@
 use bevy::prelude::*;
 use strum::{EnumIter, IntoStaticStr};
 
-use crate::{constants::STARTING_FUNDS, time::GameDateChanged};
+use crate::{
+    constants::STARTING_FUNDS,
+    state::{GameState, MainSetupSet},
+    time::GameDateChangedEvent,
+};
+
+pub struct FundsPlugin;
+
+impl Plugin for FundsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(
+            OnEnter(GameState::Main),
+            setup_funds.in_set(MainSetupSet::Default),
+        );
+    }
+}
 
 pub type FundsAmount = i64;
 
@@ -9,7 +24,7 @@ pub type FundsAmount = i64;
 pub struct Funds(pub FundsAmount);
 
 #[derive(Event)]
-pub struct FundsChanged;
+pub struct FundsChangedEvent;
 
 #[derive(Component)]
 #[allow(dead_code)] // TODO
@@ -41,7 +56,7 @@ pub fn setup_funds(mut commands: Commands) {
 }
 
 pub fn update_funds(
-    _: On<GameDateChanged>,
+    _: On<GameDateChangedEvent>,
     mut commands: Commands,
     mut funds: ResMut<Funds>,
     incomes: Query<&Income>,
@@ -53,5 +68,5 @@ pub fn update_funds(
     for Expense(amount, _) in expenses {
         funds.0 -= amount;
     }
-    commands.trigger(FundsChanged);
+    commands.trigger(FundsChangedEvent);
 }
