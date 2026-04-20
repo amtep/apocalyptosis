@@ -25,7 +25,7 @@ use crate::{
     regions::{Region, RegionsReloadedEvent},
     state::{GameState, MainSetupSet},
     text::{FluentBundleWrapper, TextKey},
-    time::{GameDate, GameDateChangedEvent, GameSpeed},
+    time::{GameDate, GameDateChangedEvent, GameSpeedAction},
 };
 
 pub struct UiPlugin;
@@ -185,7 +185,18 @@ fn setup_map(
                     });
                     parent.spawn((
                         Button,
-                        GameSpeed(1.0),
+                        GameSpeedAction::TogglePause,
+                        // 23F8 DOUBLE VERTICAL BAR would be better but is not in the font.
+                        // DOUBLE VERTICAL LINE
+                        Text("\u{2016}".to_string()),
+                        TextFont {
+                            font: unicode_font_handle.0.clone(),
+                            ..default()
+                        },
+                    ));
+                    parent.spawn((
+                        Button,
+                        GameSpeedAction::SetSpeed(1.0),
                         // RIGHTWARDS ARROW
                         Text("\u{2192}".to_string()),
                         TextFont {
@@ -195,7 +206,7 @@ fn setup_map(
                     ));
                     parent.spawn((
                         Button,
-                        GameSpeed(2.0),
+                        GameSpeedAction::SetSpeed(2.0),
                         // RIGHTWARDS PAIRED ARROWS
                         Text("\u{21C9}".to_string()),
                         TextFont {
@@ -205,7 +216,7 @@ fn setup_map(
                     ));
                     parent.spawn((
                         Button,
-                        GameSpeed(5.0),
+                        GameSpeedAction::SetSpeed(5.0),
                         // THREE RIGHTWARDS ARROWS
                         Text("\u{21F6}".to_string()),
                         TextFont {

@@ -43,21 +43,37 @@ fn fixed_update(mut commands: Commands, mut date: ResMut<GameDate>) {
 }
 
 #[derive(Component)]
-pub struct GameSpeed(pub f64);
+pub enum GameSpeedAction {
+    SetSpeed(f32),
+    TogglePause,
+}
 
 fn update_speed_buttons(
     mut input_focus: ResMut<InputFocus>,
-    mut speed: ResMut<Time<Fixed>>,
-    mut q: Query<(Entity, &Interaction, &mut Button, &GameSpeed), Changed<Interaction>>,
+    mut speed: ResMut<Time<Virtual>>,
+    mut q: Query<(Entity, &Interaction, &mut Button, &GameSpeedAction), Changed<Interaction>>,
 ) {
-    for (entity, interaction, mut button, game_speed) in &mut q {
+    for (entity, interaction, mut button, game_speed_action) in &mut q {
         match *interaction {
             Interaction::Pressed => {
                 input_focus.set(entity);
                 // alert the accessibility system
                 button.set_changed();
-                info!("Game speed {}", game_speed.0);
-                speed.set_timestep_seconds(1.0 / game_speed.0);
+                match game_speed_action {
+                    GameSpeedAction::SetSpeed(s) => {
+                        info!("Game speed {s}");
+                        speed.set_relative_speed(*s);
+                    }
+                    GameSpeedAction::TogglePause => {
+                        if speed.is_paused() {
+                            info!("Unpausing");
+                            speed.unpause();
+                        } else {
+                            info!("Pausing");
+                            speed.pause();
+                        }
+                    }
+                }
             }
             Interaction::Hovered => {
                 input_focus.set(entity);
@@ -71,15 +87,23 @@ fn update_speed_buttons(
 }
 
 // TODO: sync with the buttons somehow, to avoid duplicating the speed settings.
-fn listen_speed_keys(keys: Res<ButtonInput<KeyCode>>, mut speed: ResMut<Time<Fixed>>) {
+fn listen_speed_keys(keys: Res<ButtonInput<KeyCode>>, mut speed: ResMut<Time<Virtual>>) {
     if keys.just_pressed(KeyCode::Digit1) {
         info!("Game speed 1");
-        speed.set_timestep_seconds(1.0);
+        speed.set_relative_speed(1.0);
     } else if keys.just_pressed(KeyCode::Digit2) {
         info!("Game speed 2");
-        speed.set_timestep_seconds(0.5);
+        speed.set_relative_speed(2.0);
     } else if keys.just_pressed(KeyCode::Digit3) {
         info!("Game speed 5");
-        speed.set_timestep_seconds(0.2);
+        speed.set_relative_speed(5.0);
+    } else if keys.just_pressed(KeyCode::Space) {
+        if speed.is_paused() {
+            info!("Unpausing");
+            speed.unpause();
+        } else {
+            info!("Pausing");
+            speed.pause();
+        }
     }
 }
