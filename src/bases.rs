@@ -28,18 +28,18 @@ impl Plugin for BasesPlugin {
 }
 
 #[derive(Deserialize, Asset, TypePath)]
-pub struct BasetypesAsset(HashMap<String, BasetypeSettings>);
+struct BasetypesAsset(HashMap<String, BasetypeSettings>);
 
 #[derive(Resource)]
-pub struct BasetypesHandle(Handle<BasetypesAsset>);
+struct BasetypesHandle(Handle<BasetypesAsset>);
 
 #[derive(Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "kebab-case")]
 #[allow(dead_code)] // TODO
-pub struct BasetypeSettings {
-    pub people: isize,
-    pub cost_per_day: FundsAmount,
-    pub initial_cost: FundsAmount,
+struct BasetypeSettings {
+    people: isize,
+    cost_per_day: FundsAmount,
+    initial_cost: FundsAmount,
 }
 
 fn setup_load(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -51,7 +51,7 @@ fn setup_load(mut commands: Commands, asset_server: Res<AssetServer>) {
 #[allow(dead_code)] // TODO
 pub struct Basetype {
     pub name: String,
-    pub settings: BasetypeSettings,
+    settings: BasetypeSettings,
 }
 
 #[derive(Event)]

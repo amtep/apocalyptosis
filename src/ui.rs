@@ -45,11 +45,11 @@ impl Plugin for UiPlugin {
 
 #[derive(Component)]
 #[relationship(relationship_target = View)]
-pub struct ViewOf(pub Entity);
+struct ViewOf(Entity);
 
 #[derive(Component)]
 #[relationship_target(relationship = ViewOf)]
-pub struct View(Entity);
+struct View(Entity);
 
 #[derive(Resource)]
 struct FontHandle(Handle<Font>);
@@ -74,7 +74,7 @@ struct FundsTooltip;
 
 #[derive(Component)]
 #[require(Text)]
-struct FundsDisplay(pub FundsAmount);
+struct FundsDisplay(FundsAmount);
 
 #[derive(Component)]
 struct RegionUi;
@@ -457,7 +457,7 @@ fn on_game_date_changed_funds_tooltip(
     ));
     commands.spawn(hrule.clone());
 
-    let mut income_ledger: HashMap<IncomeCategory, (i64, usize)> = HashMap::default();
+    let mut income_ledger: HashMap<IncomeCategory, (FundsAmount, usize)> = HashMap::default();
     for Income(amount, category) in incomes {
         let (funds, count) = income_ledger.entry(*category).or_default();
         *funds += amount;
@@ -484,7 +484,7 @@ fn on_game_date_changed_funds_tooltip(
         ChildOf(tooltip),
     ));
     commands.spawn(hrule);
-    let mut expense_ledger: HashMap<ExpenseCategory, (i64, usize)> = HashMap::default();
+    let mut expense_ledger: HashMap<ExpenseCategory, (FundsAmount, usize)> = HashMap::default();
     for Expense(amount, category) in expenses {
         let (funds, count) = expense_ledger.entry(*category).or_default();
         *funds += amount;

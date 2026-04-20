@@ -12,6 +12,6 @@ impl Plugin for RngPlugin {
 #[derive(Resource)]
 pub struct RandomSource(pub StdRng);
 
-pub fn setup_rng(mut commands: Commands) {
+fn setup_rng(mut commands: Commands) {
     commands.insert_resource(RandomSource(make_rng()));
 }

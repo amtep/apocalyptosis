@@ -28,7 +28,7 @@ impl Default for GameDate {
     }
 }
 
-pub fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands) {
     commands.insert_resource(Time::<Fixed>::from_seconds(1.0));
     commands.insert_resource(GameDate::default());
 }
@@ -36,7 +36,7 @@ pub fn setup(mut commands: Commands) {
 #[derive(Event)]
 pub struct GameDateChangedEvent;
 
-pub fn fixed_update(mut commands: Commands, mut date: ResMut<GameDate>) {
+fn fixed_update(mut commands: Commands, mut date: ResMut<GameDate>) {
     // We don't expect to reach 262000 AD
     date.0 = date.0 + Days::new(1);
     commands.trigger(GameDateChangedEvent);
@@ -45,7 +45,7 @@ pub fn fixed_update(mut commands: Commands, mut date: ResMut<GameDate>) {
 #[derive(Component)]
 pub struct GameSpeed(pub f64);
 
-pub fn update_speed_buttons(
+fn update_speed_buttons(
     mut input_focus: ResMut<InputFocus>,
     mut speed: ResMut<Time<Fixed>>,
     mut q: Query<(Entity, &Interaction, &mut Button, &GameSpeed), Changed<Interaction>>,
@@ -71,7 +71,7 @@ pub fn update_speed_buttons(
 }
 
 // TODO: sync with the buttons somehow, to avoid duplicating the speed settings.
-pub fn listen_speed_keys(keys: Res<ButtonInput<KeyCode>>, mut speed: ResMut<Time<Fixed>>) {
+fn listen_speed_keys(keys: Res<ButtonInput<KeyCode>>, mut speed: ResMut<Time<Fixed>>) {
     if keys.just_pressed(KeyCode::Digit1) {
         info!("Game speed 1");
         speed.set_timestep_seconds(1.0);

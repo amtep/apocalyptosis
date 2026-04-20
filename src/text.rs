@@ -32,7 +32,7 @@ impl Plugin for TextPlugin {
 /// Only works for messages that require no arguments.
 #[derive(Component)]
 #[require(Text)]
-pub struct TextKey(pub String);
+pub struct TextKey(String);
 
 impl TextKey {
     pub fn new<S: Into<String>>(key: S, bundle: &FluentBundleResource) -> (Self, Text) {
@@ -47,7 +47,7 @@ impl TextKey {
         (text_key, text)
     }
 
-    pub fn new_args<S: Into<String>>(
+    fn new_args<S: Into<String>>(
         key: S,
         bundle: &FluentBundleResource,
         args: &FluentArgs<'_>,
@@ -115,7 +115,7 @@ impl AssetLoader for FluentResourceAssetLoader {
 struct FluentResourceAsset(Arc<FluentResource>);
 
 #[derive(Resource)]
-pub struct FluentBundleResource(pub FluentBundle<Arc<FluentResource>>, bool);
+pub struct FluentBundleResource(FluentBundle<Arc<FluentResource>>, bool);
 
 impl FluentBundleResource {
     pub fn get(&self, key: &str, args: Option<&FluentArgs<'_>>) -> String {
@@ -144,7 +144,7 @@ impl FluentBundleResource {
 struct FluentFolder(Handle<LoadedFolder>);
 
 #[derive(Event)]
-pub struct LocalesReloadedEvent;
+struct LocalesReloadedEvent;
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(FluentBundleResource(

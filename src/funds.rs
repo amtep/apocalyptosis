@@ -50,12 +50,12 @@ pub enum IncomeCategory {
     Crime,
 }
 
-pub fn setup_funds(mut commands: Commands) {
+fn setup_funds(mut commands: Commands) {
     commands.insert_resource(Funds(STARTING_FUNDS));
     commands.add_observer(update_funds);
 }
 
-pub fn update_funds(
+fn update_funds(
     _: On<GameDateChangedEvent>,
     mut commands: Commands,
     mut funds: ResMut<Funds>,
