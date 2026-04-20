@@ -35,6 +35,7 @@ impl Plugin for LocalizedTextPlugin {
 /// is loaded.
 /// Only works for messages that require no arguments.
 #[derive(Component)]
+#[require(Text)]
 pub struct TextKey(pub String);
 
 impl Display for TextKey {

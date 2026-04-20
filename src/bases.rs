@@ -101,7 +101,6 @@ fn spawn_base(
         ))
         .with_children(|parent| {
             parent.spawn((
-                Text(String::new()),
                 TextKey(format!("basetype-{}", &event.base_type)),
                 TextFont {
                     font: font.clone(),

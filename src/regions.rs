@@ -99,7 +99,6 @@ fn watch_regions(
                             ))
                             .with_children(|parent| {
                                 parent.spawn((
-                                    Text::new("".to_string()),
                                     TextKey(text_key),
                                     TextFont {
                                         font: font.clone(),

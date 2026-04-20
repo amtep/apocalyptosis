@@ -270,11 +270,7 @@ fn update_funds_tooltip(
             ))
             .with_children(|parent| {
                 parent.spawn((Text::new(format!("{count}x ")), text_font.clone()));
-                parent.spawn((
-                    Text::new(String::new()),
-                    TextKey(category),
-                    text_font.clone(),
-                ));
+                parent.spawn((TextKey(category), text_font.clone()));
                 parent.spawn(Node {
                     flex_grow: 1.0,
                     padding: UiRect::left(px(5)),
@@ -304,7 +300,6 @@ fn update_funds_tooltip(
         ChildOf(parent),
     );
     commands.spawn((
-        Text::new(String::new()),
         TextKey("income-tooltip-header".to_string()),
         text_font.clone(),
         ChildOf(parent),
@@ -332,7 +327,6 @@ fn update_funds_tooltip(
         }
     }
     commands.spawn((
-        Text::new(String::new()),
         TextKey("expense-tooltip-header".to_string()),
         text_font.clone(),
         ChildOf(parent),

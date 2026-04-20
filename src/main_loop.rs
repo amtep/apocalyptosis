@@ -16,7 +16,13 @@ pub struct NewGame;
 
 pub fn main_loop() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(AssetPlugin {
+            // During development: use the assets from the source dir.
+            // This is the default, but here the path is set regardless
+            // of the current directory.
+            file_path: format!("{}/assets", env!("CARGO_MANIFEST_DIR")),
+            ..default()
+        }))
         .add_plugins(TooltipPlugin::default())
         .add_plugins(RegionsPlugin)
         .add_plugins(BasesPlugin)
