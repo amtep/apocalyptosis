@@ -3,7 +3,7 @@
 A mix of Apocalypse, Apotheosis, and a disease.
 
 This will be a game about running a secret cult in the modern world.
-Recruit priests, mooks, and goons.
+Recruit priests, goons, and minions..
 Develop bases around the world.
 Discover deeper secrets of the deeper truths.
 Stay hidden.

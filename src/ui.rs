@@ -447,8 +447,8 @@ fn on_spawn_follower<E: EntityEvent>(
         .map(|f| {
             let text = match f {
                 Follower::Priest => Text::new("☉"),
-                Follower::Mook => Text::new("☿"),
                 Follower::Goon => Text::new("♁"),
+                Follower::Minion => Text::new("☿"),
             };
             (ChildOf(follower_list), text, text_font.clone())
         })

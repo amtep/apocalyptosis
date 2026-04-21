@@ -45,8 +45,8 @@ struct GeneralFollowerSettings {
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Follower {
     Priest,
-    Mook,
     Goon,
+    Minion,
 }
 
 fn setup_load(mut commands: Commands, asset_server: Res<AssetServer>) {
