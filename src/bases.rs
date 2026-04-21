@@ -22,7 +22,7 @@ impl Plugin for BasesPlugin {
             .add_systems(OnEnter(GameState::Load), setup_load)
             .add_systems(
                 OnEnter(GameState::Main),
-                setup_main.in_set(MainSetupSet::Bases),
+                new_spawn_base.in_set(MainSetupSet::Bases),
             );
     }
 }
@@ -58,7 +58,7 @@ pub struct Basetype {
     settings: BasetypeSettings,
 }
 
-fn setup_main(
+fn new_spawn_base(
     mut commands: Commands,
     base_types_handle: Res<BasetypesHandle>,
     base_types_asset: Res<Assets<BasetypesAsset>>,

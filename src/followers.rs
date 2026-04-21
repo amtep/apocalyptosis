@@ -22,7 +22,7 @@ impl Plugin for FollowersPlugin {
             .add_systems(OnEnter(GameState::Load), setup_load)
             .add_systems(
                 OnEnter(GameState::Main),
-                setup_main.in_set(MainSetupSet::Followers),
+                new_spawn_follower.in_set(MainSetupSet::Followers),
             );
     }
 }
@@ -55,7 +55,7 @@ fn setup_load(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 /// Create the starting priest for the cult.
-fn setup_main(
+fn new_spawn_follower(
     mut commands: Commands,
     bases: Query<Entity, With<Base>>,
     followers_handle: Res<FollowersHandle>,
