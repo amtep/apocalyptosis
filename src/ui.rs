@@ -17,7 +17,7 @@ use pyri_tooltip::{
 use strum::IntoEnumIterator;
 
 use crate::{
-    bases::{Basetype, SpawnBaseEvent},
+    bases::Basetype,
     constants::ui::{
         FONT_DISPLAY_PATH, FONT_PATH, MENU_BACKGROUND, MENU_HOVER_BACKGROUND,
         MENU_PRESSED_BACKGROUND, PX_HEIGHT, PX_WIDTH, UNICODE_FONT_PATH,
@@ -25,7 +25,7 @@ use crate::{
     funds::{
         Expense, ExpenseCategory, Funds, FundsAmount, FundsChangedEvent, Income, IncomeCategory,
     },
-    regions::{Region, RegionsReloadedEvent},
+    regions::Region,
     state::{GameState, MainSetupSet},
     text::{FluentBundleWrapper, TextKey},
     time::{GameDate, GameDateChangedEvent, GameSpeedAction},
@@ -51,8 +51,8 @@ impl Plugin for UiPlugin {
 struct ViewOf(Entity);
 
 #[derive(Component)]
-#[relationship_target(relationship = ViewOf)]
-struct View(Entity);
+#[relationship_target(relationship = ViewOf, linked_spawn)]
+struct View(Vec<Entity>);
 
 #[derive(Resource)]
 struct FontHandle(Handle<Font>);
@@ -161,7 +161,7 @@ fn setup_map(
                                 font: font_handle.0.clone(),
                                 ..default()
                             },
-                            TextKey::new_no_args("funds-display"),
+                            FundsDisplay(0),
                             FundsUi,
                             Tooltip {
                                 content: TooltipContent::Custom(tooltip_content),
@@ -281,12 +281,9 @@ fn on_game_date_changed(
 fn on_funds_changed(
     _: On<FundsChangedEvent>,
     funds: Res<Funds>,
-    mut text: Single<(&mut Text, &TextKey), With<FundsUi>>,
-    bundle: Res<FluentBundleWrapper>,
+    mut funds_display: Single<&mut FundsDisplay, With<FundsUi>>,
 ) {
-    let mut args = FluentArgs::new();
-    args.set("funds", funds.0);
-    text.0.0 = text.1.get(&bundle, &args);
+    funds_display.0 = funds.0;
 }
 
 fn setup_regions(
@@ -343,33 +340,45 @@ fn setup_regions(
 
 // INFO: Assume only the settings have changed, while none is added or removed.
 fn on_regions_reloaded(
-    _: On<RegionsReloadedEvent>,
-    regions: Query<&Region>,
-    mut region_uis: Query<(&mut Node, &ViewOf), With<RegionUi>>,
+    event: On<Insert, Region>,
+    regions: Query<(&Region, &View)>,
+    mut region_uis: Query<&mut Node, With<RegionUi>>,
 ) {
-    for (mut node, region_ui) in region_uis.iter_mut() {
-        if let Ok(region) = regions.get(region_ui.0) {
-            node.left = percent(region.settings.x);
-            node.top = percent(region.settings.y);
-        }
-    }
+    let region = regions.get(event.entity).unwrap();
+    let settings = region.0.settings;
+    let region_views = &region.1.0;
+
+    let mut node = region_views
+        .iter()
+        .find(|view| region_uis.contains(**view))
+        .map(|entity| region_uis.get_mut(*entity).unwrap())
+        .unwrap();
+    node.left = percent(settings.x);
+    node.top = percent(settings.y);
 }
 
 fn on_spawn_base(
-    event: On<SpawnBaseEvent>,
+    event: On<Add, Basetype>,
     mut commands: Commands,
+    parents: Query<&ChildOf>,
     regions: Query<(&Region, &View)>,
+    region_uis: Query<&RegionUi>,
     base_types: Query<&Basetype>,
     font_handle: Res<FontHandle>,
     bundle: Res<FluentBundleWrapper>,
 ) {
-    let region_ui = regions.get(event.region).unwrap().1.0;
-    let base_type = base_types.get(event.base_type).unwrap();
+    let region = parents.get(event.entity).unwrap().0;
+    let region_views = &regions.get(region).unwrap().1.0;
+    let region_ui = region_views
+        .iter()
+        .find(|view| region_uis.contains(**view))
+        .unwrap();
+    let base_type = base_types.get(event.entity).unwrap();
 
     commands
         .spawn((
-            ChildOf(region_ui),
-            ViewOf(event.base_type),
+            ChildOf(*region_ui),
+            ViewOf(event.entity),
             Node {
                 border: UiRect::all(px(1)),
                 padding: UiRect::horizontal(px(2)),

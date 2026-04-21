@@ -58,12 +58,6 @@ pub struct Basetype {
     settings: BasetypeSettings,
 }
 
-#[derive(Event)]
-pub struct SpawnBaseEvent {
-    pub region: Entity,
-    pub base_type: Entity,
-}
-
 fn setup_main(
     mut commands: Commands,
     base_types_handle: Res<BasetypesHandle>,
@@ -77,19 +71,12 @@ fn setup_main(
 
     let base_types = &base_types_asset.get(base_types_handle.0.id()).unwrap().0;
     let apartment = base_types.get_key_value("apartment").unwrap();
-    let apartment = commands
-        .spawn((
-            Base,
-            Basetype {
-                name: apartment.0.clone(),
-                settings: *apartment.1,
-            },
-            Expense(apartment.1.cost_per_day, ExpenseCategory::Bases),
-        ))
-        .id();
-    commands.entity(region).add_child(apartment);
-    commands.trigger(SpawnBaseEvent {
-        region,
-        base_type: apartment,
-    });
+    commands.entity(region).with_child((
+        Base,
+        Basetype {
+            name: apartment.0.clone(),
+            settings: *apartment.1,
+        },
+        Expense(apartment.1.cost_per_day, ExpenseCategory::Bases),
+    ));
 }

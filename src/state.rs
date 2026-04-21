@@ -13,9 +13,9 @@ impl Plugin for StatePlugin {
                 (
                     MainSetupSet::Default,
                     MainSetupSet::Regions,
+                    MainSetupSet::Ui,
                     MainSetupSet::Bases,
                     MainSetupSet::Followers,
-                    MainSetupSet::Ui,
                     MainSetupSet::Late,
                 )
                     .chain(),

@@ -29,7 +29,7 @@ struct RegionsAsset(HashMap<String, RegionSettings>);
 #[derive(Resource)]
 struct RegionsHandle(Handle<RegionsAsset>);
 
-#[derive(Debug, Deserialize, Clone, Copy)]
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq)]
 pub struct RegionSettings {
     pub x: f32,
     pub y: f32,
@@ -63,13 +63,10 @@ fn setup_main(
     }
 }
 
-#[derive(Event)]
-pub struct RegionsReloadedEvent;
-
 fn reload(
     mut commands: Commands,
     mut reader: MessageReader<AssetEvent<RegionsAsset>>,
-    mut regions: Query<&mut Region>,
+    mut regions: Query<(Entity, &Region)>,
     regions_handle: Res<RegionsHandle>,
     regions_asset: Res<Assets<RegionsAsset>>,
 ) {
@@ -78,13 +75,17 @@ fn reload(
 
         let regions_map = &regions_asset.get(regions_handle.0.id()).unwrap().0;
 
-        for mut region in regions.iter_mut() {
-            if let Some(settings) = regions_map.get(&region.name) {
-                region.settings = *settings;
+        for (entity, region) in regions.iter_mut() {
+            if let Some(settings) = regions_map.get(&region.name)
+                && region.settings != *settings
+            {
+                commands.entity(entity).insert(Region {
+                    name: region.name.clone(),
+                    settings: *settings,
+                });
             }
         }
 
-        commands.trigger(RegionsReloadedEvent);
         reader.clear();
     }
 }

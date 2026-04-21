@@ -22,7 +22,7 @@ impl Plugin for FollowersPlugin {
             .add_systems(OnEnter(GameState::Load), setup_load)
             .add_systems(
                 OnEnter(GameState::Main),
-                new_game.in_set(MainSetupSet::Followers),
+                setup_main.in_set(MainSetupSet::Followers),
             );
     }
 }
@@ -55,7 +55,7 @@ fn setup_load(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 /// Create the starting priest for the cult.
-fn new_game(
+fn setup_main(
     mut commands: Commands,
     bases: Query<Entity, With<Base>>,
     followers_handle: Res<FollowersHandle>,
@@ -77,9 +77,7 @@ fn new_game(
     // In general, we should check whether the base has room
     // for another follower, but this is a new game and it
     // will be empty.
-
-    let follower = commands
-        .spawn((Follower::Priest, Expense(cost, ExpenseCategory::Followers)))
-        .id();
-    commands.entity(base).add_child(follower);
+    commands
+        .entity(base)
+        .with_child((Follower::Priest, Expense(cost, ExpenseCategory::Followers)));
 }
