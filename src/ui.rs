@@ -128,7 +128,6 @@ fn setup_map(
                 .spawn((
                     Node {
                         width: percent(100.0),
-                        height: percent(2.5),
                         border: UiRect::vertical(px(2)),
                         align_items: AlignItems::FlexEnd,
                         justify_content: JustifyContent::Center,
@@ -232,7 +231,7 @@ fn setup_map(
                 },
                 Node {
                     width: percent(100.0),
-                    height: percent(97.5),
+                    flex_grow: 1.0,
                     ..default()
                 },
                 MapUi,
