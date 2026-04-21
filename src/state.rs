@@ -43,10 +43,22 @@ pub enum MainSetupSet {
 #[derive(Resource)]
 struct LoadHandle(Handle<LoadedFolder>);
 
+#[derive(Component)]
+struct LoadingScreen;
+
 fn load_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     info!("entered load game state");
     commands.insert_resource(LoadHandle(asset_server.load_folder(".")));
-    commands.spawn(BackgroundColor(Color::BLACK));
+    commands.spawn(Camera2d);
+    commands.spawn((
+        Node {
+            width: percent(100.0),
+            height: percent(100.0),
+            ..Default::default()
+        },
+        LoadingScreen,
+        BackgroundColor(Color::BLACK),
+    ));
 }
 
 fn load_update(
@@ -55,13 +67,13 @@ fn load_update(
     load_handle: Res<LoadHandle>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    if asset_server.is_loaded(load_handle.0.id()) {
+    if asset_server.is_loaded_with_dependencies(load_handle.0.id()) {
         commands.remove_resource::<LoadHandle>();
         next_state.set(GameState::Main);
     }
 }
 
-fn load_cleanup(mut commands: Commands, background: Single<(Entity, &BackgroundColor)>) {
+fn load_cleanup(mut commands: Commands, background: Single<Entity, With<LoadingScreen>>) {
     info!("exited load game state");
-    commands.entity(background.0).despawn();
+    commands.entity(background.entity()).despawn();
 }

@@ -93,7 +93,6 @@ fn setup_fonts(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2d);
     commands.insert_resource(InputFocus::default());
 }
 
