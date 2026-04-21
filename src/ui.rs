@@ -29,19 +29,15 @@ use crate::{
     time::{GameDate, GameDateChangedEvent, GameSpeedAction},
 };
 
-pub struct UiPlugin;
-
-impl Plugin for UiPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Load), setup_fonts)
-            .add_systems(
-                OnEnter(GameState::Main),
-                (setup, setup_map, setup_regions)
-                    .chain()
-                    .in_set(MainSetupSet::Ui),
-            )
-            .add_systems(Update, (update_button_colors, update_funds_displays));
-    }
+pub fn plugin(app: &mut App) {
+    app.add_systems(OnEnter(GameState::Load), setup_fonts)
+        .add_systems(
+            OnEnter(GameState::Main),
+            (setup, setup_map, setup_regions)
+                .chain()
+                .in_set(MainSetupSet::Ui),
+        )
+        .add_systems(Update, (update_button_colors, update_funds_displays));
 }
 
 #[derive(Component)]

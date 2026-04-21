@@ -8,19 +8,15 @@ use crate::state::{GameState, MainSetupSet};
 
 const REGIONS_ASSET_PATH: &str = "data/define.regions.toml";
 
-pub struct RegionsPlugin;
-
-impl Plugin for RegionsPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(TomlAssetPlugin::<RegionsAsset>::new(&["regions.toml"]))
-            .add_systems(OnEnter(GameState::Load), setup_load)
-            .add_systems(OnExit(GameState::Load), cleanup_load)
-            .add_systems(
-                OnEnter(GameState::Main),
-                setup_main.in_set(MainSetupSet::Regions),
-            )
-            .add_systems(FixedUpdate, reload.run_if(not(in_state(GameState::Load))));
-    }
+pub fn plugin(app: &mut App) {
+    app.add_plugins(TomlAssetPlugin::<RegionsAsset>::new(&["regions.toml"]))
+        .add_systems(OnEnter(GameState::Load), setup_load)
+        .add_systems(OnExit(GameState::Load), cleanup_load)
+        .add_systems(
+            OnEnter(GameState::Main),
+            setup_main.in_set(MainSetupSet::Regions),
+        )
+        .add_systems(FixedUpdate, reload.run_if(not(in_state(GameState::Load))));
 }
 
 #[derive(Deserialize, Asset, TypePath)]

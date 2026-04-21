@@ -7,15 +7,11 @@ use crate::{
     time::GameDateChangedEvent,
 };
 
-pub struct FundsPlugin;
-
-impl Plugin for FundsPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(
-            OnEnter(GameState::Main),
-            setup_funds.in_set(MainSetupSet::Default),
-        );
-    }
+pub fn plugin(app: &mut App) {
+    app.add_systems(
+        OnEnter(GameState::Main),
+        setup_funds.in_set(MainSetupSet::Default),
+    );
 }
 
 pub type FundsAmount = i64;

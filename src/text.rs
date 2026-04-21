@@ -12,23 +12,17 @@ use unic_langid::langid;
 
 use crate::state::GameState;
 
-pub struct TextPlugin;
-
-impl Plugin for TextPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Load), setup)
-            .add_systems(Update, update.run_if(in_state(GameState::Load)))
-            .add_systems(OnExit(GameState::Load), cleanup)
-            .add_systems(FixedUpdate, reload.run_if(not(in_state(GameState::Load))))
-            .init_asset::<FluentResourceAsset>()
-            .register_asset_loader(FluentResourceAssetLoader);
-    }
+pub fn plugin(app: &mut App) {
+    app.add_systems(OnEnter(GameState::Load), setup)
+        .add_systems(Update, update.run_if(in_state(GameState::Load)))
+        .add_systems(OnExit(GameState::Load), cleanup)
+        .add_systems(FixedUpdate, reload.run_if(not(in_state(GameState::Load))))
+        .init_asset::<FluentResourceAsset>()
+        .register_asset_loader(FluentResourceAssetLoader);
 }
 
 /// Add this component to entities that have a Text node that
 /// should be derived from this message key.
-/// They will be automatically updated if the `LocalizedTextPlugin`
-/// is loaded.
 /// Only works for messages that require no arguments.
 #[derive(Component)]
 #[require(Text)]

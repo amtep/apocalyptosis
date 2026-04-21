@@ -3,20 +3,16 @@ use chrono::{Days, NaiveDate};
 
 use crate::state::{GameState, MainSetupSet};
 
-pub struct TimePlugin;
-
-impl Plugin for TimePlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(
-            OnEnter(GameState::Main),
-            setup.in_set(MainSetupSet::Default),
-        )
-        .add_systems(FixedUpdate, fixed_update.run_if(in_state(GameState::Main)))
-        .add_systems(
-            Update,
-            (update_speed_buttons, listen_speed_keys).run_if(in_state(GameState::Main)),
-        );
-    }
+pub fn plugin(app: &mut App) {
+    app.add_systems(
+        OnEnter(GameState::Main),
+        setup.in_set(MainSetupSet::Default),
+    )
+    .add_systems(FixedUpdate, fixed_update.run_if(in_state(GameState::Main)))
+    .add_systems(
+        Update,
+        (update_speed_buttons, listen_speed_keys).run_if(in_state(GameState::Main)),
+    );
 }
 
 #[derive(Resource)]

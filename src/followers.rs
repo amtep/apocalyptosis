@@ -14,17 +14,13 @@ use crate::{
 
 const FOLLOWERS_ASSET_PATH: &str = "data/define.followers.toml";
 
-pub struct FollowersPlugin;
-
-impl Plugin for FollowersPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(TomlAssetPlugin::<FollowersAsset>::new(&["followers.toml"]))
-            .add_systems(OnEnter(GameState::Load), setup_load)
-            .add_systems(
-                OnEnter(GameState::Main),
-                new_spawn_follower.in_set(MainSetupSet::Followers),
-            );
-    }
+pub fn plugin(app: &mut App) {
+    app.add_plugins(TomlAssetPlugin::<FollowersAsset>::new(&["followers.toml"]))
+        .add_systems(OnEnter(GameState::Load), setup_load)
+        .add_systems(
+            OnEnter(GameState::Main),
+            new_spawn_follower.in_set(MainSetupSet::Followers),
+        );
 }
 
 #[derive(Deserialize, Asset, TypePath)]

@@ -1,12 +1,8 @@
 use bevy::prelude::*;
 use rand::{make_rng, rngs::StdRng};
 
-pub struct RngPlugin;
-
-impl Plugin for RngPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_rng);
-    }
+pub fn plugin(app: &mut App) {
+    app.add_systems(Startup, setup_rng);
 }
 
 #[derive(Resource)]

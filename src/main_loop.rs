@@ -1,11 +1,6 @@
 use bevy::prelude::*;
 use pyri_tooltip::TooltipPlugin;
 
-use crate::{
-    bases::BasesPlugin, followers::FollowersPlugin, funds::FundsPlugin, regions::RegionsPlugin,
-    rng::RngPlugin, state::StatePlugin, text::TextPlugin, time::TimePlugin, ui::UiPlugin,
-};
-
 pub fn main_loop() {
     App::new()
         .add_plugins((
@@ -17,15 +12,15 @@ pub fn main_loop() {
                 ..default()
             }),
             TooltipPlugin::default(),
-            StatePlugin,
-            TextPlugin,
-            RegionsPlugin,
-            BasesPlugin,
-            RngPlugin,
-            FundsPlugin,
-            TimePlugin,
-            FollowersPlugin,
-            UiPlugin,
+            crate::state::plugin,
+            crate::text::plugin,
+            crate::regions::plugin,
+            crate::bases::plugin,
+            crate::rng::plugin,
+            crate::funds::plugin,
+            crate::time::plugin,
+            crate::followers::plugin,
+            crate::ui::plugin,
         ))
         .run();
 }

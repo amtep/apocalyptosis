@@ -14,17 +14,13 @@ use crate::{
 
 const BASETYPES_ASSET_PATH: &str = "data/define.basetypes.toml";
 
-pub struct BasesPlugin;
-
-impl Plugin for BasesPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(TomlAssetPlugin::<BasetypesAsset>::new(&["basetypes.toml"]))
-            .add_systems(OnEnter(GameState::Load), setup_load)
-            .add_systems(
-                OnEnter(GameState::Main),
-                new_spawn_base.in_set(MainSetupSet::Bases),
-            );
-    }
+pub fn plugin(app: &mut App) {
+    app.add_plugins(TomlAssetPlugin::<BasetypesAsset>::new(&["basetypes.toml"]))
+        .add_systems(OnEnter(GameState::Load), setup_load)
+        .add_systems(
+            OnEnter(GameState::Main),
+            new_spawn_base.in_set(MainSetupSet::Bases),
+        );
 }
 
 #[derive(Deserialize, Asset, TypePath)]

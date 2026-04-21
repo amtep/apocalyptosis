@@ -1,26 +1,22 @@
 use bevy::{asset::LoadedFolder, prelude::*};
 
-pub struct StatePlugin;
-
-impl Plugin for StatePlugin {
-    fn build(&self, app: &mut App) {
-        app.init_state::<GameState>()
-            .add_systems(OnEnter(GameState::Load), load_setup)
-            .add_systems(Update, load_update.run_if(in_state(GameState::Load)))
-            .add_systems(OnExit(GameState::Load), load_cleanup)
-            .configure_sets(
-                OnEnter(GameState::Main),
-                (
-                    MainSetupSet::Default,
-                    MainSetupSet::Regions,
-                    MainSetupSet::Ui,
-                    MainSetupSet::Bases,
-                    MainSetupSet::Followers,
-                    MainSetupSet::Late,
-                )
-                    .chain(),
-            );
-    }
+pub fn plugin(app: &mut App) {
+    app.init_state::<GameState>()
+        .add_systems(OnEnter(GameState::Load), load_setup)
+        .add_systems(Update, load_update.run_if(in_state(GameState::Load)))
+        .add_systems(OnExit(GameState::Load), load_cleanup)
+        .configure_sets(
+            OnEnter(GameState::Main),
+            (
+                MainSetupSet::Default,
+                MainSetupSet::Regions,
+                MainSetupSet::Ui,
+                MainSetupSet::Bases,
+                MainSetupSet::Followers,
+                MainSetupSet::Late,
+            )
+                .chain(),
+        );
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, States)]
