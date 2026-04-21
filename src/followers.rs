@@ -42,8 +42,7 @@ struct GeneralFollowerSettings {
     cost_per_day: FundsAmount,
 }
 
-#[derive(Component)]
-#[allow(dead_code)] // TODO
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Follower {
     Priest,
     Mook,
@@ -77,7 +76,9 @@ fn new_spawn_follower(
     // In general, we should check whether the base has room
     // for another follower, but this is a new game and it
     // will be empty.
+
+    // INFO: need to ensure the children relationship target is updated BEFORE the follower.
     commands
-        .entity(base)
-        .with_child((Follower::Priest, Expense(cost, ExpenseCategory::Followers)));
+        .spawn((ChildOf(base), Expense(cost, ExpenseCategory::Followers)))
+        .insert(Follower::Priest);
 }

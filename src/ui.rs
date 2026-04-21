@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 
-use bevy::{
-    camera::ScalingMode, color::palettes::css::YELLOW, input_focus::InputFocus, prelude::*,
-};
+use bevy::{color::palettes::css::YELLOW, input_focus::InputFocus, prelude::*};
 use chrono::Datelike;
 use fluent::FluentArgs;
 use fluent_datetime::{FluentDateTime, length};
@@ -19,8 +17,9 @@ use crate::{
     bases::{Base, Basetype},
     constants::ui::{
         FONT_DISPLAY_PATH, FONT_PATH, MENU_BACKGROUND, MENU_HOVER_BACKGROUND,
-        MENU_PRESSED_BACKGROUND, PX_HEIGHT, PX_WIDTH, UNICODE_FONT_PATH,
+        MENU_PRESSED_BACKGROUND, UNICODE_FONT_PATH,
     },
+    followers::Follower,
     funds::{
         Expense, ExpenseCategory, Funds, FundsAmount, FundsChangedEvent, Income, IncomeCategory,
     },
@@ -46,12 +45,12 @@ impl Plugin for UiPlugin {
 }
 
 #[derive(Component)]
-#[relationship(relationship_target = View)]
+#[relationship(relationship_target = Views)]
 struct ViewOf(Entity);
 
 #[derive(Component)]
 #[relationship_target(relationship = ViewOf, linked_spawn)]
-struct View(Vec<Entity>);
+struct Views(Vec<Entity>);
 
 #[derive(Resource)]
 struct FontHandle(Handle<Font>);
@@ -81,6 +80,12 @@ struct FundsDisplay(FundsAmount);
 #[derive(Component)]
 struct RegionUi;
 
+#[derive(Component)]
+struct BaseUi;
+
+#[derive(Component)]
+struct FollowerList;
+
 fn setup_fonts(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(FontHandle(asset_server.load(FONT_PATH)));
     commands.insert_resource(DisplayFontHandle(asset_server.load(FONT_DISPLAY_PATH)));
@@ -88,17 +93,7 @@ fn setup_fonts(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn((
-        Camera2d,
-        // The `AspectRatioPlugin` needs this
-        Projection::from(OrthographicProjection {
-            scaling_mode: ScalingMode::AutoMin {
-                min_width: PX_WIDTH,
-                min_height: PX_HEIGHT,
-            },
-            ..OrthographicProjection::default_2d()
-        }),
-    ));
+    commands.spawn(Camera2d);
     commands.insert_resource(InputFocus::default());
 }
 
@@ -333,12 +328,14 @@ fn setup_regions(
 
     commands.add_observer(on_regions_reloaded);
     commands.add_observer(on_spawn_base);
+    commands.add_observer(on_spawn_follower::<Insert>);
+    commands.add_observer(on_spawn_follower::<Replace>);
 }
 
 // INFO: Assume only the settings have changed, while none is added or removed.
 fn on_regions_reloaded(
     event: On<Insert, Region>,
-    regions: Query<(&Region, &View)>,
+    regions: Query<(&Region, &Views)>,
     mut region_uis: Query<&mut Node, With<RegionUi>>,
 ) {
     let region = regions.get(event.entity).unwrap();
@@ -358,14 +355,14 @@ fn on_spawn_base(
     event: On<Add, Base>,
     mut commands: Commands,
     parents: Query<&ChildOf>,
-    regions: Query<(&Region, &View)>,
+    regions: Query<&Views, With<Region>>,
     region_uis: Query<&RegionUi>,
     base_types: Query<&Basetype>,
     font_handle: Res<FontHandle>,
     bundle: Res<FluentBundleWrapper>,
 ) {
     let region = parents.get(event.entity).unwrap().0;
-    let region_views = &regions.get(region).unwrap().1.0;
+    let region_views = &regions.get(region).unwrap().0;
     let region_ui = region_views
         .iter()
         .find(|view| region_uis.contains(**view))
@@ -376,7 +373,9 @@ fn on_spawn_base(
         .spawn((
             ChildOf(*region_ui),
             ViewOf(event.entity),
+            BaseUi,
             Node {
+                flex_direction: FlexDirection::Column,
                 border: UiRect::all(px(1)),
                 padding: UiRect::horizontal(px(2)),
                 justify_content: JustifyContent::Center,
@@ -393,7 +392,70 @@ fn on_spawn_base(
                     ..default()
                 },
             ));
+            parent.spawn((
+                FollowerList,
+                Node {
+                    flex_direction: FlexDirection::Row,
+                    justify_content: JustifyContent::Center,
+                    ..Default::default()
+                },
+            ));
         });
+}
+
+fn on_spawn_follower<E: EntityEvent>(
+    event: On<E, Follower>,
+    mut commands: Commands,
+    parents: Query<&ChildOf>,
+    children: Query<&Children>,
+    followers: Query<&Follower>,
+    base_views: Query<&Views, With<Base>>,
+    base_uis: Query<&BaseUi>,
+    follower_lists: Query<&FollowerList>,
+    unicode_font_handle: Res<UnicodeFontHandle>,
+) {
+    let base = parents.get(event.event_target()).unwrap().0;
+    let base_views = base_views.get(base).unwrap();
+    let base_ui = base_views
+        .iter()
+        .find(|view| base_uis.contains(*view))
+        .unwrap();
+    let follower_list = children
+        .get(base_ui)
+        .unwrap()
+        .iter()
+        .find(|fl| follower_lists.contains(*fl))
+        .unwrap();
+
+    commands.entity(follower_list).despawn_children();
+
+    let mut followers: Vec<Follower> = children
+        .get(base)
+        .unwrap()
+        .iter()
+        .map(|follower| *followers.get(follower).unwrap())
+        .collect();
+
+    followers.sort_unstable();
+
+    let text_font = TextFont {
+        font: unicode_font_handle.0.clone(),
+        ..Default::default()
+    };
+
+    let bundles: Vec<_> = followers
+        .iter()
+        .map(|f| {
+            let text = match f {
+                Follower::Priest => Text::new("☉"),
+                Follower::Mook => Text::new("☿"),
+                Follower::Goon => Text::new("♁"),
+            };
+            (ChildOf(follower_list), text, text_font.clone())
+        })
+        .collect();
+
+    commands.spawn_batch(bundles);
 }
 
 fn update_funds_displays(
