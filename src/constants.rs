@@ -5,6 +5,8 @@ pub const STARTING_FUNDS: FundsAmount = 5000;
 pub mod ui {
     use bevy::color::Srgba;
 
+    pub const TEXTURE_EARTH_BACKGROUND: &str = "textures/earth_night.jpg";
+
     pub const FONT_DISPLAY_PATH: &str = "fonts/DancingScript-Variable.ttf";
     pub const FONT_PATH: &str = "fonts/Lora-Variable.ttf";
     // A font spanning more unicode code points than usual

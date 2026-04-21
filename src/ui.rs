@@ -17,7 +17,7 @@ use crate::{
     bases::{Base, Basetype},
     constants::ui::{
         FONT_DISPLAY_PATH, FONT_PATH, MENU_BACKGROUND, MENU_HOVER_BACKGROUND,
-        MENU_PRESSED_BACKGROUND, UNICODE_FONT_PATH,
+        MENU_PRESSED_BACKGROUND, TEXTURE_EARTH_BACKGROUND, UNICODE_FONT_PATH,
     },
     followers::Follower,
     funds::{
@@ -226,7 +226,7 @@ fn setup_map(
                 });
             parent.spawn((
                 ImageNode {
-                    image: asset_server.load("textures/earth_night.jpg"),
+                    image: asset_server.load(TEXTURE_EARTH_BACKGROUND),
                     image_mode: NodeImageMode::Stretch,
                     ..default()
                 },

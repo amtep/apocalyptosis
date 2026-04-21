@@ -21,6 +21,7 @@ pub fn main_loop() {
             crate::time::plugin,
             crate::followers::plugin,
             crate::ui::plugin,
+            crate::main_menu::plugin,
         ))
         .run();
 }

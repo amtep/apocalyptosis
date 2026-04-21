@@ -4,6 +4,7 @@ mod bases;
 mod constants;
 mod followers;
 mod funds;
+mod main_menu;
 mod regions;
 mod rng;
 mod state;
