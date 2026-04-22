@@ -7,7 +7,7 @@ use serde_derive::Deserialize;
 
 use crate::{
     funds::{Expense, ExpenseCategory, FundsAmount},
-    regions::Region,
+    regions::BasePlot,
     rng::RandomSource,
     state::{GameState, MainSetupSet},
 };
@@ -59,15 +59,15 @@ fn new_spawn_base(
     base_types_handle: Res<BasetypesHandle>,
     base_types_asset: Res<Assets<BasetypesAsset>>,
     mut random_source: ResMut<RandomSource>,
-    regions: Query<Entity, With<Region>>,
+    base_plots: Query<Entity, With<BasePlot>>,
 ) {
     info!("Creating starting base");
-    let i = random_source.0.random_range(0..regions.count());
-    let region = regions.iter().nth(i).unwrap();
+    let i = random_source.0.random_range(0..base_plots.count());
+    let base_plot = base_plots.iter().nth(i).unwrap();
 
     let base_types = &base_types_asset.get(base_types_handle.0.id()).unwrap().0;
     let apartment = base_types.get_key_value("apartment").unwrap();
-    commands.entity(region).with_child((
+    commands.entity(base_plot).with_child((
         Base,
         Basetype {
             name: apartment.0.clone(),

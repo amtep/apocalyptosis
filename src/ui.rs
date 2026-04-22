@@ -279,38 +279,19 @@ fn setup_regions(
     mut commands: Commands,
     map_ui: Single<Entity, With<MapUi>>,
     regions: Query<(Entity, &Region, &Location, &Children)>,
-    base_plots: Query<(&BasePlot, &Location)>,
+    base_plots: Query<&Location, With<BasePlot>>,
     font_handle: Res<DisplayFontHandle>,
     bundle: Res<FluentBundleWrapper>,
 ) {
     for (entity, region, location, children) in regions.iter() {
-        for child in children {
-            let (base_plot, location) = base_plots.get(*child).unwrap();
-            commands.spawn((
-                ChildOf(*map_ui),
-                ViewOf(*child),
-                BasePlotUi,
-                Node {
-                    left: percent(location.x),
-                    top: percent(location.y),
-                    position_type: PositionType::Absolute,
-                    ..Default::default()
-                },
-                Text::new(&base_plot.name),
-            ));
-        }
-
         commands
             .spawn((
                 ChildOf(*map_ui),
                 ViewOf(entity),
                 Node {
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
                     position_type: PositionType::Absolute,
                     left: percent(location.x),
                     top: percent(location.y),
-                    row_gap: px(10),
                     ..default()
                 },
                 RegionUi,
@@ -338,6 +319,21 @@ fn setup_regions(
                         ));
                     });
             });
+
+        for child in children {
+            let location = base_plots.get(*child).unwrap();
+            commands.spawn((
+                ChildOf(*map_ui),
+                ViewOf(*child),
+                BasePlotUi,
+                Node {
+                    left: percent(location.x),
+                    top: percent(location.y),
+                    position_type: PositionType::Absolute,
+                    ..Default::default()
+                },
+            ));
+        }
     }
 
     commands.add_observer(on_location_reloaded);
@@ -366,23 +362,23 @@ fn on_spawn_base(
     event: On<Add, Base>,
     mut commands: Commands,
     parents: Query<&ChildOf>,
-    regions: Query<&Views, With<Region>>,
-    region_uis: Query<&RegionUi>,
+    base_plots: Query<&Views, With<BasePlot>>,
+    base_plot_uis: Query<&BasePlotUi>,
     base_types: Query<&Basetype>,
     font_handle: Res<FontHandle>,
     bundle: Res<FluentBundleWrapper>,
 ) {
-    let region = parents.get(event.entity).unwrap().0;
-    let region_views = &regions.get(region).unwrap().0;
-    let region_ui = region_views
+    let base_plot = parents.get(event.entity).unwrap().0;
+    let base_plot_views = &base_plots.get(base_plot).unwrap().0;
+    let base_plot_ui = base_plot_views
         .iter()
-        .find(|view| region_uis.contains(**view))
+        .find(|view| base_plot_uis.contains(**view))
         .unwrap();
     let base_type = base_types.get(event.entity).unwrap();
 
     commands
         .spawn((
-            ChildOf(*region_ui),
+            ChildOf(*base_plot_ui),
             ViewOf(event.entity),
             BaseUi,
             Node {

@@ -45,5 +45,5 @@ base-plots = {
 x = 84
 y = 60
 base-plots = {
-    aotearoa = { x = 96, y = 72 },
+    aotearoa = { x = 94, y = 72 },
 }
