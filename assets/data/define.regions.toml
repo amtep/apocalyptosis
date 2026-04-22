@@ -1,27 +1,49 @@
 [north-america]
-x = 18
-y = 27
+x = 20
+y = 25
+base-plots = {
+    canada = { x = 27, y = 23 },
+    so-cal = { x = 16, y = 30 },
+}
 
 [south-america]
 x = 29
 y = 55
+base-plots = {
+    guyanas = { x = 32, y = 45 },
+}
 
 [europe]
 x = 51
 y = 20
+base-plots = {
+    balkan = { x = 55, y = 25 },
+}
 
 [africa]
 x = 54
 y = 45
+base-plots = {
+    west-africa = { x = 48, y = 43 },
+}
 
 [south-asia]
 x = 68
 y = 30
+base-plots = {
+    india = { x = 71, y = 37 },
+}
 
 [east-asia]
 x = 80
 y = 27
+base-plots = {
+    japan = { x = 88, y = 29 },
+}
 
 [australia]
 x = 84
 y = 60
+base-plots = {
+    aotearoa = { x = 96, y = 72 },
+}

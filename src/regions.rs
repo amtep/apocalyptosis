@@ -25,16 +25,28 @@ struct RegionsAsset(HashMap<String, RegionSettings>);
 #[derive(Resource)]
 struct RegionsHandle(Handle<RegionsAsset>);
 
-#[derive(Debug, Deserialize, Clone, Copy, PartialEq)]
-pub struct RegionSettings {
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Component)]
+pub struct Location {
     pub x: f32,
     pub y: f32,
+}
+
+#[derive(Debug, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub struct RegionSettings {
+    #[serde(flatten)]
+    pub location: Location,
+    pub base_plots: HashMap<String, Location>,
 }
 
 #[derive(Component)]
 pub struct Region {
     pub name: String,
-    pub settings: RegionSettings,
+}
+
+#[derive(Component)]
+pub struct BasePlot {
+    pub name: String,
 }
 
 fn setup_load(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -51,18 +63,22 @@ fn setup_main(
     regions_asset: Res<Assets<RegionsAsset>>,
 ) {
     let regions = &regions_asset.get(regions_handle.0.id()).unwrap().0;
-    for (name, &settings) in regions.iter() {
-        commands.spawn(Region {
-            name: name.to_owned(),
-            settings,
-        });
+    for (name, settings) in regions.iter() {
+        commands
+            .spawn((Region { name: name.clone() }, settings.location))
+            .with_children(|parent| {
+                for (name, location) in &settings.base_plots {
+                    parent.spawn((BasePlot { name: name.clone() }, *location));
+                }
+            });
     }
 }
 
 fn reload(
     mut commands: Commands,
     mut reader: MessageReader<AssetEvent<RegionsAsset>>,
-    mut regions: Query<(Entity, &Region)>,
+    regions: Query<(Entity, &Region, &Location, &Children)>,
+    base_plots: Query<(&BasePlot, &Location)>,
     regions_handle: Res<RegionsHandle>,
     regions_asset: Res<Assets<RegionsAsset>>,
 ) {
@@ -71,14 +87,20 @@ fn reload(
 
         let regions_map = &regions_asset.get(regions_handle.0.id()).unwrap().0;
 
-        for (entity, region) in regions.iter_mut() {
-            if let Some(settings) = regions_map.get(&region.name)
-                && region.settings != *settings
-            {
-                commands.entity(entity).insert(Region {
-                    name: region.name.clone(),
-                    settings: *settings,
-                });
+        for (entity, region, location, children) in regions {
+            if let Some(settings) = regions_map.get(&region.name) {
+                if *location != settings.location {
+                    commands.entity(entity).insert(settings.location);
+                }
+
+                for child in children {
+                    if let Ok((base_plot, old_location)) = base_plots.get(*child)
+                        && let Some(location) = settings.base_plots.get(&base_plot.name)
+                        && old_location != location
+                    {
+                        commands.entity(*child).insert(*location);
+                    }
+                }
             }
         }
 

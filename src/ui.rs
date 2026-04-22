@@ -23,7 +23,7 @@ use crate::{
     funds::{
         Expense, ExpenseCategory, Funds, FundsAmount, FundsChangedEvent, Income, IncomeCategory,
     },
-    regions::Region,
+    regions::{BasePlot, Location, Region},
     state::{GameState, MainSetupSet},
     text::{FluentBundleWrapper, TextKey},
     time::{GameDate, GameDateChangedEvent, GameSpeedAction},
@@ -75,6 +75,9 @@ struct FundsDisplay(FundsAmount);
 
 #[derive(Component)]
 struct RegionUi;
+
+#[derive(Component)]
+struct BasePlotUi;
 
 #[derive(Component)]
 struct BaseUi;
@@ -275,12 +278,27 @@ fn on_funds_changed(
 fn setup_regions(
     mut commands: Commands,
     map_ui: Single<Entity, With<MapUi>>,
-    regions: Query<(Entity, &Region)>,
+    regions: Query<(Entity, &Region, &Location, &Children)>,
+    base_plots: Query<(&BasePlot, &Location)>,
     font_handle: Res<DisplayFontHandle>,
     bundle: Res<FluentBundleWrapper>,
 ) {
-    for (entity, region) in regions.iter() {
-        let Region { name, settings } = region;
+    for (entity, region, location, children) in regions.iter() {
+        for child in children {
+            let (base_plot, location) = base_plots.get(*child).unwrap();
+            commands.spawn((
+                ChildOf(*map_ui),
+                ViewOf(*child),
+                BasePlotUi,
+                Node {
+                    left: percent(location.x),
+                    top: percent(location.y),
+                    position_type: PositionType::Absolute,
+                    ..Default::default()
+                },
+                Text::new(&base_plot.name),
+            ));
+        }
 
         commands
             .spawn((
@@ -288,9 +306,11 @@ fn setup_regions(
                 ViewOf(entity),
                 Node {
                     flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
                     position_type: PositionType::Absolute,
-                    left: percent(settings.x),
-                    top: percent(settings.y),
+                    left: percent(location.x),
+                    top: percent(location.y),
+                    row_gap: px(10),
                     ..default()
                 },
                 RegionUi,
@@ -310,7 +330,7 @@ fn setup_regions(
                     ))
                     .with_children(|parent| {
                         parent.spawn((
-                            TextKey::new(format!("region-{name}"), &bundle),
+                            TextKey::new(format!("region-{}", region.name), &bundle),
                             TextFont {
                                 font: font_handle.0.clone(),
                                 ..default()
@@ -320,29 +340,26 @@ fn setup_regions(
             });
     }
 
-    commands.add_observer(on_regions_reloaded);
+    commands.add_observer(on_location_reloaded);
     commands.add_observer(on_spawn_base);
-    commands.add_observer(on_spawn_follower::<Insert>);
-    commands.add_observer(on_spawn_follower::<Replace>);
+    commands.add_observer(on_changed_follower::<Insert>);
+    commands.add_observer(on_changed_follower::<Replace>);
 }
 
-// INFO: Assume only the settings have changed, while none is added or removed.
-fn on_regions_reloaded(
-    event: On<Insert, Region>,
-    regions: Query<(&Region, &Views)>,
-    mut region_uis: Query<&mut Node, With<RegionUi>>,
+// INFO: Assume only the location has changed, while none is added or removed.
+fn on_location_reloaded(
+    event: On<Insert, Location>,
+    parts: Query<(&Location, &Views)>,
+    mut nodes: Query<&mut Node>,
 ) {
-    let region = regions.get(event.entity).unwrap();
-    let settings = region.0.settings;
-    let region_views = &region.1.0;
+    let (location, views) = parts.get(event.entity).unwrap();
 
-    let mut node = region_views
-        .iter()
-        .find(|view| region_uis.contains(**view))
-        .map(|entity| region_uis.get_mut(*entity).unwrap())
-        .unwrap();
-    node.left = percent(settings.x);
-    node.top = percent(settings.y);
+    for view in &views.0 {
+        if let Ok(mut node) = nodes.get_mut(*view) {
+            node.left = percent(location.x);
+            node.top = percent(location.y);
+        }
+    }
 }
 
 fn on_spawn_base(
@@ -372,7 +389,7 @@ fn on_spawn_base(
                 flex_direction: FlexDirection::Column,
                 border: UiRect::all(px(1)),
                 padding: UiRect::horizontal(px(2)),
-                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
                 ..default()
             },
             BorderColor::all(Color::WHITE),
@@ -397,7 +414,7 @@ fn on_spawn_base(
         });
 }
 
-fn on_spawn_follower<E: EntityEvent>(
+fn on_changed_follower<E: EntityEvent>(
     event: On<E, Follower>,
     mut commands: Commands,
     parents: Query<&ChildOf>,
