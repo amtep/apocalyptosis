@@ -17,11 +17,15 @@ pub mod ui {
     pub const MAGENTA: Srgba = Srgba::rgb(0.859, 0.282, 0.545); // #DB488B
     pub const LIGHT_PINK: Srgba = Srgba::rgb(1.000, 0.514, 0.965); // #FF83F6
     pub const CYAN: Srgba = Srgba::rgb(0.243, 0.816, 0.922); // #3ED0EB
+    pub const WHITE: Srgba = Srgba::rgb(0.878, 0.878, 0.878);
+    pub const YELLOW: Srgba = Srgba::rgb(1.00, 1.00, 0.384);
+    pub const BLACK: Srgba = Srgba::rgb(0.071, 0.071, 0.071);
 
     pub const MENU_BACKGROUND: Srgba = DARK_PURPLE;
     pub const MENU_HOVER_BACKGROUND: Srgba = INDIGO;
-    pub const MENU_PRESSED_BACKGROUND: Srgba = Srgba::rgb(0.0, 0.0, 0.0);
+    pub const MENU_PRESSED_BACKGROUND: Srgba = BLACK;
 
-    pub const TEXT: Srgba = Srgba::rgb(0.878, 0.878, 0.878);
-    pub const TEXT_HIGHLIGHT: Srgba = Srgba::rgb(1.00, 1.00, 0.384);
+    pub const TEXT: Srgba = WHITE;
+    pub const BORDER: Srgba = WHITE;
+    pub const TEXT_HIGHLIGHT: Srgba = YELLOW;
 }

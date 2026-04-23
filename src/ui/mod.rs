@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 
-use bevy::{
-    color::palettes::css::YELLOW, input_focus::InputFocus, prelude::*, window::WindowResized,
-};
+use bevy::{input_focus::InputFocus, prelude::*, window::WindowResized};
 use chrono::Datelike;
 use fluent::FluentArgs;
 use fluent_datetime::{FluentDateTime, length};
@@ -17,10 +15,7 @@ use strum::IntoEnumIterator;
 
 use crate::{
     bases::{Base, Basetype},
-    constants::ui::{
-        FONT_DISPLAY_PATH, FONT_PATH, MENU_BACKGROUND, TEXT, TEXT_HIGHLIGHT,
-        TEXTURE_EARTH_BACKGROUND, UNICODE_FONT_PATH,
-    },
+    constants::ui::*,
     followers::Follower,
     funds::{
         Expense, ExpenseCategory, Funds, FundsAmount, FundsChangedEvent, Income, IncomeCategory,
@@ -136,7 +131,7 @@ fn setup_map(
                 ..default()
             },
             BorderColor::all(YELLOW),
-            BackgroundColor(MENU_BACKGROUND.into()),
+            BackgroundColor::from(MENU_BACKGROUND),
             Visibility::Hidden,
             ZIndex(1),
         ))
@@ -161,8 +156,8 @@ fn setup_map(
                         justify_content: JustifyContent::Center,
                         ..default()
                     },
-                    BorderColor::all(Color::WHITE),
-                    BackgroundColor(MENU_BACKGROUND.into()),
+                    BorderColor::all(BORDER),
+                    BackgroundColor::from(MENU_BACKGROUND),
                 ))
                 .with_children(|parent| {
                     // Funds counter
@@ -218,7 +213,7 @@ fn setup_map(
                         }, // 23F8 DOUBLE VERTICAL BAR would be better but is not in the font.
                         // DOUBLE VERTICAL LINE
                         Text("\u{2016}".to_string()),
-                        TextColor(TEXT.into()),
+                        TextColor::from(TEXT),
                         TextFont {
                             font: unicode_font_handle.0.clone(),
                             ..default()
@@ -233,7 +228,7 @@ fn setup_map(
                             ..Default::default()
                         }, // RIGHTWARDS ARROW
                         Text("\u{2192}".to_string()),
-                        TextColor(TEXT_HIGHLIGHT.into()),
+                        TextColor::from(TEXT_HIGHLIGHT),
                         TextFont {
                             font: unicode_font_handle.0.clone(),
                             ..default()
@@ -248,7 +243,7 @@ fn setup_map(
                             ..Default::default()
                         }, // RIGHTWARDS PAIRED ARROWS
                         Text("\u{21C9}".to_string()),
-                        TextColor(TEXT.into()),
+                        TextColor::from(TEXT),
                         TextFont {
                             font: unicode_font_handle.0.clone(),
                             ..default()
@@ -263,7 +258,7 @@ fn setup_map(
                             ..Default::default()
                         }, // THREE RIGHTWARDS ARROWS
                         Text("\u{21F6}".to_string()),
-                        TextColor(TEXT.into()),
+                        TextColor::from(TEXT),
                         TextFont {
                             font: unicode_font_handle.0.clone(),
                             ..default()
@@ -339,20 +334,24 @@ fn setup_regions(
                     top: percent(location.y),
                     ..default()
                 },
+                UiTransform {
+                    translation: Val2::percent(-50.0, -50.0),
+                    ..Default::default()
+                },
                 RegionUi,
             ))
             .with_children(|parent| {
                 parent
                     .spawn((
                         Node {
-                            border: UiRect::all(px(2)),
+                            border: UiRect::all(px(1)),
                             border_radius: BorderRadius::all(px(10)),
-                            padding: UiRect::all(px(10)),
+                            padding: UiRect::all(px(5)),
                             align_self: AlignSelf::Center,
                             ..default()
                         },
-                        BorderColor::all(Color::WHITE),
-                        BackgroundColor(MENU_BACKGROUND.into()),
+                        BorderColor::all(BORDER),
+                        BackgroundColor::from(MENU_BACKGROUND),
                     ))
                     .with_children(|parent| {
                         parent.spawn((
@@ -375,6 +374,10 @@ fn setup_regions(
                     left: percent(location.x),
                     top: percent(location.y),
                     position_type: PositionType::Absolute,
+                    ..Default::default()
+                },
+                UiTransform {
+                    translation: Val2::percent(-50.0, -50.0),
                     ..Default::default()
                 },
             ));
@@ -433,13 +436,14 @@ fn on_spawn_base(
                 align_items: AlignItems::Center,
                 ..default()
             },
-            BorderColor::all(Color::WHITE),
-            BackgroundColor(MENU_BACKGROUND.into()),
+            BorderColor::all(WHITE),
+            BackgroundColor::from(MENU_BACKGROUND),
         ))
         .with_children(|parent| {
             parent.spawn((
                 TextKey::new(format!("basetype-{}", &base_type.name), &bundle),
                 TextFont {
+                    font_size: 14.0,
                     font: font_handle.0.clone(),
                     ..default()
                 },
@@ -612,7 +616,7 @@ fn on_game_date_changed_funds_tooltip(
             margin: UiRect::vertical(px(5)),
             ..default()
         },
-        BackgroundColor(YELLOW.into()),
+        BackgroundColor::from(YELLOW),
         ChildOf(tooltip),
     );
     commands.spawn((
