@@ -31,7 +31,6 @@ struct BasetypesHandle(Handle<BasetypesAsset>);
 
 #[derive(Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "kebab-case")]
-#[allow(dead_code)] // TODO
 struct BasetypeSettings {
     people: isize,
     cost_per_day: FundsAmount,
@@ -48,7 +47,6 @@ pub struct Base;
 
 /// The `String` is the key for the base type in the `Basetypes` asset.
 #[derive(Component)]
-#[allow(dead_code)] // TODO
 pub struct Basetype {
     pub name: String,
     settings: BasetypeSettings,

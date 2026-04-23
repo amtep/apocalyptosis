@@ -23,10 +23,8 @@ pub struct Funds(pub FundsAmount);
 pub struct FundsChangedEvent;
 
 #[derive(Component)]
-#[allow(dead_code)] // TODO
 pub struct Expense(pub FundsAmount, pub ExpenseCategory);
 
-#[allow(dead_code)] // TODO
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "lowercase")]
 pub enum ExpenseCategory {
@@ -35,10 +33,8 @@ pub enum ExpenseCategory {
 }
 
 #[derive(Component)]
-#[allow(dead_code)] // TODO
 pub struct Income(pub FundsAmount, pub IncomeCategory);
 
-#[allow(dead_code)] // TODO
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "lowercase")]
 pub enum IncomeCategory {
