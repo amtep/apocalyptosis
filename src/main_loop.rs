@@ -18,9 +18,9 @@ pub fn main_loop() {
             crate::bases::plugin,
             crate::rng::plugin,
             crate::funds::plugin,
+            crate::ui::plugin,
             crate::time::plugin,
             crate::followers::plugin,
-            crate::ui::plugin,
             crate::main_menu::plugin,
         ))
         .run();

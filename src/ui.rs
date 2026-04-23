@@ -17,7 +17,7 @@ use crate::{
     bases::{Base, Basetype},
     constants::ui::{
         FONT_DISPLAY_PATH, FONT_PATH, MENU_BACKGROUND, MENU_HOVER_BACKGROUND,
-        MENU_PRESSED_BACKGROUND, TEXTURE_EARTH_BACKGROUND, UNICODE_FONT_PATH,
+        MENU_PRESSED_BACKGROUND, TEXT, TEXT_HIGHLIGHT, TEXTURE_EARTH_BACKGROUND, UNICODE_FONT_PATH,
     },
     followers::Follower,
     funds::{
@@ -26,7 +26,10 @@ use crate::{
     regions::{BasePlot, Location, Region},
     state::{GameState, MainSetupSet},
     text::{FluentBundleWrapper, TextKey},
-    time::{GameDate, GameDateChangedEvent, GameSpeedAction},
+    time::{
+        CurrentGameSpeed, GameDate, GameDateChangedEvent, GameSpeed, GameSpeedAction,
+        GameSpeedChangedEvent,
+    },
 };
 
 pub fn plugin(app: &mut App) {
@@ -37,7 +40,15 @@ pub fn plugin(app: &mut App) {
                 .chain()
                 .in_set(MainSetupSet::Ui),
         )
-        .add_systems(Update, (update_button_colors, update_funds_displays));
+        .add_systems(
+            Update,
+            (update_speed_buttons, update_funds_displays).run_if(in_state(GameState::Main)),
+        )
+        .add_systems(
+            Update,
+            update_game_speed_state
+                .run_if(resource_changed::<CurrentGameSpeed>.and(in_state(GameState::Main))),
+        );
 }
 
 #[derive(Component)]
@@ -187,43 +198,63 @@ fn setup_map(
                     parent.spawn((
                         Button,
                         GameSpeedAction::TogglePause,
-                        // 23F8 DOUBLE VERTICAL BAR would be better but is not in the font.
+                        Node {
+                            width: px(25),
+                            ..Default::default()
+                        }, // 23F8 DOUBLE VERTICAL BAR would be better but is not in the font.
                         // DOUBLE VERTICAL LINE
                         Text("\u{2016}".to_string()),
+                        TextColor(TEXT.into()),
                         TextFont {
                             font: unicode_font_handle.0.clone(),
                             ..default()
                         },
+                        TextLayout::new_with_justify(Justify::Center),
                     ));
                     parent.spawn((
                         Button,
-                        GameSpeedAction::SetSpeed(1.0),
-                        // RIGHTWARDS ARROW
+                        GameSpeedAction::SetSpeed(GameSpeed::Normal),
+                        Node {
+                            width: px(25),
+                            ..Default::default()
+                        }, // RIGHTWARDS ARROW
                         Text("\u{2192}".to_string()),
+                        TextColor(TEXT_HIGHLIGHT.into()),
                         TextFont {
                             font: unicode_font_handle.0.clone(),
                             ..default()
                         },
+                        TextLayout::new_with_justify(Justify::Center),
                     ));
                     parent.spawn((
                         Button,
-                        GameSpeedAction::SetSpeed(2.0),
-                        // RIGHTWARDS PAIRED ARROWS
+                        GameSpeedAction::SetSpeed(GameSpeed::Fast),
+                        Node {
+                            width: px(25),
+                            ..Default::default()
+                        }, // RIGHTWARDS PAIRED ARROWS
                         Text("\u{21C9}".to_string()),
+                        TextColor(TEXT.into()),
                         TextFont {
                             font: unicode_font_handle.0.clone(),
                             ..default()
                         },
+                        TextLayout::new_with_justify(Justify::Center),
                     ));
                     parent.spawn((
                         Button,
-                        GameSpeedAction::SetSpeed(5.0),
-                        // THREE RIGHTWARDS ARROWS
+                        GameSpeedAction::SetSpeed(GameSpeed::Faster),
+                        Node {
+                            width: px(25),
+                            ..Default::default()
+                        }, // THREE RIGHTWARDS ARROWS
                         Text("\u{21F6}".to_string()),
+                        TextColor(TEXT.into()),
                         TextFont {
                             font: unicode_font_handle.0.clone(),
                             ..default()
                         },
+                        TextLayout::new_with_justify(Justify::Center),
                     ));
                 });
             parent.spawn((
@@ -476,19 +507,53 @@ fn update_funds_displays(
     }
 }
 
-fn update_button_colors(
-    mut q: Query<(&Interaction, &mut BackgroundColor), (Changed<Interaction>, With<Button>)>,
+fn update_game_speed_state(
+    current_game_speed: Res<CurrentGameSpeed>,
+    mut game_speed_buttons: Query<(&mut TextColor, &GameSpeedAction)>,
 ) {
-    for (interaction, mut background) in &mut q {
+    for (mut text_color, &speed_action) in game_speed_buttons.iter_mut() {
+        let is_active = speed_action == GameSpeedAction::TogglePause && current_game_speed.paused
+            || speed_action == GameSpeedAction::SetSpeed(current_game_speed.speed)
+                && !current_game_speed.paused;
+        if is_active {
+            *text_color = TEXT_HIGHLIGHT.into();
+        } else {
+            *text_color = TEXT.into();
+        }
+    }
+}
+
+fn update_speed_buttons(
+    mut commands: Commands,
+    mut input_focus: ResMut<InputFocus>,
+    mut q: Query<
+        (
+            Entity,
+            &Interaction,
+            &mut Button,
+            &mut BackgroundColor,
+            &GameSpeedAction,
+        ),
+        Changed<Interaction>,
+    >,
+) {
+    for (entity, interaction, mut button, mut background_color, game_speed_action) in &mut q {
         match *interaction {
             Interaction::Pressed => {
-                *background = MENU_PRESSED_BACKGROUND.into();
+                input_focus.set(entity);
+                // alert the accessibility system
+                button.set_changed();
+                commands.trigger(GameSpeedChangedEvent(*game_speed_action));
+                *background_color = MENU_PRESSED_BACKGROUND.into();
             }
             Interaction::Hovered => {
-                *background = MENU_HOVER_BACKGROUND.into();
+                input_focus.set(entity);
+                button.set_changed();
+                *background_color = MENU_HOVER_BACKGROUND.into();
             }
             Interaction::None => {
-                *background = MENU_BACKGROUND.into();
+                input_focus.clear();
+                *background_color = MENU_BACKGROUND.into();
             }
         }
     }

@@ -1,4 +1,4 @@
-use bevy::{input_focus::InputFocus, prelude::*};
+use bevy::prelude::*;
 use chrono::{Days, NaiveDate};
 
 use crate::state::{GameState, MainSetupSet};
@@ -8,11 +8,9 @@ pub fn plugin(app: &mut App) {
         OnEnter(GameState::Main),
         setup.in_set(MainSetupSet::Default),
     )
+    .init_resource::<CurrentGameSpeed>()
     .add_systems(FixedUpdate, fixed_update.run_if(in_state(GameState::Main)))
-    .add_systems(
-        Update,
-        (update_speed_buttons, listen_speed_keys).run_if(in_state(GameState::Main)),
-    );
+    .add_systems(Update, listen_speed_keys.run_if(in_state(GameState::Main)));
 }
 
 #[derive(Resource)]
@@ -27,6 +25,13 @@ impl Default for GameDate {
 fn setup(mut commands: Commands) {
     commands.insert_resource(Time::<Fixed>::from_seconds(1.0));
     commands.insert_resource(GameDate::default());
+    commands.add_observer(on_game_speed_changed);
+}
+
+#[derive(Resource, Default)]
+pub struct CurrentGameSpeed {
+    pub paused: bool,
+    pub speed: GameSpeed,
 }
 
 #[derive(Event)]
@@ -38,68 +43,68 @@ fn fixed_update(mut commands: Commands, mut date: ResMut<GameDate>) {
     commands.trigger(GameDateChangedEvent);
 }
 
-#[derive(Component)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum GameSpeed {
+    #[default]
+    Normal,
+    Fast,
+    Faster,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Component)]
 pub enum GameSpeedAction {
-    SetSpeed(f32),
+    SetSpeed(GameSpeed),
     TogglePause,
 }
 
-fn update_speed_buttons(
-    mut input_focus: ResMut<InputFocus>,
-    mut speed: ResMut<Time<Virtual>>,
-    mut q: Query<(Entity, &Interaction, &mut Button, &GameSpeedAction), Changed<Interaction>>,
+#[derive(Event)]
+pub struct GameSpeedChangedEvent(pub GameSpeedAction);
+
+fn on_game_speed_changed(
+    event: On<GameSpeedChangedEvent>,
+    mut time: ResMut<Time<Virtual>>,
+    mut current_game_speed: ResMut<CurrentGameSpeed>,
 ) {
-    for (entity, interaction, mut button, game_speed_action) in &mut q {
-        match *interaction {
-            Interaction::Pressed => {
-                input_focus.set(entity);
-                // alert the accessibility system
-                button.set_changed();
-                match game_speed_action {
-                    GameSpeedAction::SetSpeed(s) => {
-                        info!("Game speed {s}");
-                        speed.set_relative_speed(*s);
-                    }
-                    GameSpeedAction::TogglePause => {
-                        if speed.is_paused() {
-                            info!("Unpausing");
-                            speed.unpause();
-                        } else {
-                            info!("Pausing");
-                            speed.pause();
-                        }
-                    }
-                }
+    match event.0 {
+        GameSpeedAction::SetSpeed(speed) => {
+            let s = match speed {
+                GameSpeed::Normal => 1.0,
+                GameSpeed::Fast => 2.0,
+                GameSpeed::Faster => 5.0,
+            };
+            info!("Game speed to {s}");
+            time.set_relative_speed(s);
+            time.unpause();
+            *current_game_speed = CurrentGameSpeed {
+                paused: false,
+                speed,
+            };
+        }
+        GameSpeedAction::TogglePause => {
+            if current_game_speed.paused {
+                info!("Unpausing");
+                time.unpause();
+            } else {
+                info!("Pausing");
+                time.pause();
             }
-            Interaction::Hovered => {
-                input_focus.set(entity);
-                button.set_changed();
-            }
-            Interaction::None => {
-                input_focus.clear();
-            }
+            current_game_speed.paused = !current_game_speed.paused;
         }
     }
 }
 
-// TODO: sync with the buttons somehow, to avoid duplicating the speed settings.
-fn listen_speed_keys(keys: Res<ButtonInput<KeyCode>>, mut speed: ResMut<Time<Virtual>>) {
-    if keys.just_pressed(KeyCode::Digit1) {
-        info!("Game speed 1");
-        speed.set_relative_speed(1.0);
+fn listen_speed_keys(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>) {
+    let action = if keys.just_pressed(KeyCode::Digit1) {
+        GameSpeedAction::SetSpeed(GameSpeed::Normal)
     } else if keys.just_pressed(KeyCode::Digit2) {
-        info!("Game speed 2");
-        speed.set_relative_speed(2.0);
+        GameSpeedAction::SetSpeed(GameSpeed::Fast)
     } else if keys.just_pressed(KeyCode::Digit3) {
-        info!("Game speed 5");
-        speed.set_relative_speed(5.0);
+        GameSpeedAction::SetSpeed(GameSpeed::Faster)
     } else if keys.just_pressed(KeyCode::Space) {
-        if speed.is_paused() {
-            info!("Unpausing");
-            speed.unpause();
-        } else {
-            info!("Pausing");
-            speed.pause();
-        }
-    }
+        GameSpeedAction::TogglePause
+    } else {
+        return;
+    };
+
+    commands.trigger(GameSpeedChangedEvent(action));
 }

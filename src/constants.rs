@@ -16,4 +16,7 @@ pub mod ui {
     pub const MENU_BACKGROUND: Srgba = Srgba::rgb(0.2, 0.0, 0.2);
     pub const MENU_HOVER_BACKGROUND: Srgba = Srgba::rgb(0.3, 0.0, 0.3);
     pub const MENU_PRESSED_BACKGROUND: Srgba = Srgba::rgb(0.0, 0.0, 0.0);
+
+    pub const TEXT: Srgba = Srgba::rgb(0.8, 0.8, 0.8);
+    pub const TEXT_HIGHLIGHT: Srgba = Srgba::rgb(0.85, 0.85, 0.25);
 }
