@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::constants::ui::{MENU_BACKGROUND, MENU_HOVER_BACKGROUND, MENU_PRESSED_BACKGROUND};
 
 pub fn update_button_backgrounds(
-    mut q: Query<(&Interaction, &mut BackgroundColor), Changed<Interaction>>,
+    mut q: Query<(&Interaction, &mut BackgroundColor), (Changed<Interaction>, With<Button>)>,
 ) {
     for (interaction, mut background_color) in &mut q {
         match *interaction {

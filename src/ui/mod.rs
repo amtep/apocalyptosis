@@ -163,7 +163,7 @@ fn setup_map(
                     // Funds counter
                     parent.spawn((
                         Node {
-                            padding: UiRect::right(px(5)),
+                            min_width: px(75),
                             ..default()
                         },
                         // will be updated by on_funds_changed
@@ -606,6 +606,7 @@ fn on_game_date_changed_funds_tooltip(
 
     // Completely refresh the tooltip contents
     let text_font = TextFont {
+        font_size: 14.0,
         font: font_handle.0.clone(),
         ..default()
     };

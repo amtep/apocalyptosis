@@ -1,5 +1,7 @@
 use bevy::{asset::LoadedFolder, prelude::*};
 
+use crate::constants::ui::BLACK;
+
 pub fn plugin(app: &mut App) {
     app.init_state::<GameState>()
         .add_systems(OnEnter(GameState::Load), load_setup)
@@ -50,7 +52,7 @@ fn load_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             height: percent(100.0),
             ..Default::default()
         },
-        BackgroundColor(Color::BLACK),
+        BackgroundColor::from(BLACK),
     ));
 }
 
