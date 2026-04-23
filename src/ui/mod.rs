@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use bevy::{color::palettes::css::YELLOW, input_focus::InputFocus, prelude::*};
+use bevy::{
+    color::palettes::css::YELLOW, input_focus::InputFocus, prelude::*, window::WindowResized,
+};
 use chrono::Datelike;
 use fluent::FluentArgs;
 use fluent_datetime::{FluentDateTime, length};
@@ -36,11 +38,12 @@ mod buttons;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Load), setup_fonts)
+        .init_resource::<UiScale>()
+        .init_resource::<InputFocus>()
+        .add_systems(Update, read_window_resized_messages)
         .add_systems(
             OnEnter(GameState::Main),
-            (setup, setup_map, setup_regions)
-                .chain()
-                .in_set(MainSetupSet::Ui),
+            (setup_map, setup_regions).chain().in_set(MainSetupSet::Ui),
         )
         .add_systems(
             Update,
@@ -107,8 +110,14 @@ fn setup_fonts(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(UnicodeFontHandle(asset_server.load(UNICODE_FONT_PATH)));
 }
 
-fn setup(mut commands: Commands) {
-    commands.insert_resource(InputFocus::default());
+fn read_window_resized_messages(
+    mut reader: MessageReader<WindowResized>,
+    mut ui_scale: ResMut<UiScale>,
+) {
+    if let Some(WindowResized { height, .. }) = reader.read().last() {
+        info!("window resized; height: {height}");
+        ui_scale.0 = height / 720.0;
+    }
 }
 
 fn setup_map(

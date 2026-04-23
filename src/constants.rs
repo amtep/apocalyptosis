@@ -12,11 +12,16 @@ pub mod ui {
     // A font spanning more unicode code points than usual
     pub const UNICODE_FONT_PATH: &str = "fonts/DejaVuSans.ttf";
 
-    /// A dark purple
-    pub const MENU_BACKGROUND: Srgba = Srgba::rgb(0.2, 0.0, 0.2);
-    pub const MENU_HOVER_BACKGROUND: Srgba = Srgba::rgb(0.3, 0.0, 0.3);
+    pub const DARK_PURPLE: Srgba = Srgba::rgb(0.102, 0.055, 0.243); // #1A0E3E
+    pub const INDIGO: Srgba = Srgba::rgb(0.122, 0.102, 0.439); // #1F1A70
+    pub const MAGENTA: Srgba = Srgba::rgb(0.859, 0.282, 0.545); // #DB488B
+    pub const LIGHT_PINK: Srgba = Srgba::rgb(1.000, 0.514, 0.965); // #FF83F6
+    pub const CYAN: Srgba = Srgba::rgb(0.243, 0.816, 0.922); // #3ED0EB
+
+    pub const MENU_BACKGROUND: Srgba = DARK_PURPLE;
+    pub const MENU_HOVER_BACKGROUND: Srgba = INDIGO;
     pub const MENU_PRESSED_BACKGROUND: Srgba = Srgba::rgb(0.0, 0.0, 0.0);
 
-    pub const TEXT: Srgba = Srgba::rgb(0.8, 0.8, 0.8);
-    pub const TEXT_HIGHLIGHT: Srgba = Srgba::rgb(0.85, 0.85, 0.25);
+    pub const TEXT: Srgba = Srgba::rgb(0.878, 0.878, 0.878);
+    pub const TEXT_HIGHLIGHT: Srgba = Srgba::rgb(1.00, 1.00, 0.384);
 }
