@@ -16,8 +16,8 @@ use strum::IntoEnumIterator;
 use crate::{
     bases::{Base, Basetype},
     constants::ui::{
-        FONT_DISPLAY_PATH, FONT_PATH, MENU_BACKGROUND, MENU_HOVER_BACKGROUND,
-        MENU_PRESSED_BACKGROUND, TEXT, TEXT_HIGHLIGHT, TEXTURE_EARTH_BACKGROUND, UNICODE_FONT_PATH,
+        FONT_DISPLAY_PATH, FONT_PATH, MENU_BACKGROUND, TEXT, TEXT_HIGHLIGHT,
+        TEXTURE_EARTH_BACKGROUND, UNICODE_FONT_PATH,
     },
     followers::Follower,
     funds::{
@@ -32,6 +32,8 @@ use crate::{
     },
 };
 
+mod buttons;
+
 pub fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Load), setup_fonts)
         .add_systems(
@@ -42,7 +44,10 @@ pub fn plugin(app: &mut App) {
         )
         .add_systems(
             Update,
-            (update_speed_buttons, update_funds_displays).run_if(in_state(GameState::Main)),
+            (
+                (update_speed_buttons, update_funds_displays).run_if(in_state(GameState::Main)),
+                buttons::update_button_backgrounds,
+            ),
         )
         .add_systems(
             Update,
@@ -526,34 +531,22 @@ fn update_game_speed_state(
 fn update_speed_buttons(
     mut commands: Commands,
     mut input_focus: ResMut<InputFocus>,
-    mut q: Query<
-        (
-            Entity,
-            &Interaction,
-            &mut Button,
-            &mut BackgroundColor,
-            &GameSpeedAction,
-        ),
-        Changed<Interaction>,
-    >,
+    mut q: Query<(Entity, &Interaction, &mut Button, &GameSpeedAction), Changed<Interaction>>,
 ) {
-    for (entity, interaction, mut button, mut background_color, game_speed_action) in &mut q {
+    for (entity, interaction, mut button, game_speed_action) in &mut q {
         match *interaction {
             Interaction::Pressed => {
                 input_focus.set(entity);
                 // alert the accessibility system
                 button.set_changed();
                 commands.trigger(GameSpeedChangedEvent(*game_speed_action));
-                *background_color = MENU_PRESSED_BACKGROUND.into();
             }
             Interaction::Hovered => {
                 input_focus.set(entity);
                 button.set_changed();
-                *background_color = MENU_HOVER_BACKGROUND.into();
             }
             Interaction::None => {
                 input_focus.clear();
-                *background_color = MENU_BACKGROUND.into();
             }
         }
     }
