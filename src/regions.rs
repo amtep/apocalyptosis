@@ -53,10 +53,13 @@ fn setup_load(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(RegionsHandle(asset_server.load(REGIONS_ASSET_PATH)));
 }
 
+/// Clear the message queue before transitioning out of the `Load` state.
+/// This prevents spurious reload detections later.
 fn cleanup_load(mut messages: ResMut<Messages<AssetEvent<RegionsAsset>>>) {
     messages.clear();
 }
 
+/// Create `Region` and `BasePlot` entities based on the regions asset file.
 fn setup_main(
     mut commands: Commands,
     regions_handle: Res<RegionsHandle>,
@@ -74,6 +77,8 @@ fn setup_main(
     }
 }
 
+/// Adjust location settings in the game state entities if the regions asset file has changed.
+/// Addition or removal of regions and base plots is ignored.
 fn reload(
     mut commands: Commands,
     mut reader: MessageReader<AssetEvent<RegionsAsset>>,

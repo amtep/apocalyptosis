@@ -69,7 +69,7 @@ fn new_spawn_follower(
         .map(|v| v.cost_per_day)
         .unwrap_or(0);
 
-    // In general, we should check whether the base has room
+    // Generally we should check whether the base has room
     // for another follower, but this is a new game and it
     // will be empty.
 

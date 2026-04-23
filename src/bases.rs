@@ -64,6 +64,7 @@ fn new_spawn_base(
     let base_plot = base_plots.iter().nth(i).unwrap();
 
     let base_types = &base_types_asset.get(base_types_handle.0.id()).unwrap().0;
+    // TODO: don't hardcode this string
     let apartment = base_types.get_key_value("apartment").unwrap();
     commands.entity(base_plot).with_child((
         Base,
