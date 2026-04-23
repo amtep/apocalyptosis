@@ -8,7 +8,6 @@ pub fn plugin(app: &mut App) {
         OnEnter(GameState::Main),
         setup.in_set(MainSetupSet::Default),
     )
-    .init_resource::<CurrentGameSpeed>()
     .add_systems(FixedUpdate, fixed_update.run_if(in_state(GameState::Main)))
     .add_systems(Update, listen_speed_keys.run_if(in_state(GameState::Main)));
 }
@@ -25,6 +24,7 @@ impl Default for GameDate {
 fn setup(mut commands: Commands) {
     commands.insert_resource(Time::<Fixed>::from_seconds(1.0));
     commands.insert_resource(GameDate::default());
+    commands.insert_resource(CurrentGameSpeed::default());
     commands.add_observer(on_game_speed_changed);
 }
 

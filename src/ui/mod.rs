@@ -22,6 +22,7 @@ use crate::{
     },
     regions::{BasePlot, Location, Region},
     state::{GameState, MainSetupSet},
+    suspicion::Suspicion,
     text::{FluentBundleWrapper, TextKey},
     time::{
         CurrentGameSpeed, GameDate, GameDateChangedEvent, GameSpeed, GameSpeedAction,
@@ -43,14 +44,25 @@ pub fn plugin(app: &mut App) {
         .add_systems(
             Update,
             (
-                (update_speed_buttons, update_funds_displays).run_if(in_state(GameState::Main)),
+                (
+                    update_speed_buttons,
+                    update_funds_displays,
+                    update_meter_display::<u32>,
+                )
+                    .run_if(in_state(GameState::Main)),
                 buttons::update_button_backgrounds,
             ),
         )
         .add_systems(
             Update,
-            update_game_speed_state
-                .run_if(resource_changed::<CurrentGameSpeed>.and(in_state(GameState::Main))),
+            update_suspicion
+                .run_if(resource_exists_and_changed::<Suspicion>.and(in_state(GameState::Main))),
+        )
+        .add_systems(
+            Update,
+            update_game_speed_state.run_if(
+                resource_exists_and_changed::<CurrentGameSpeed>.and(in_state(GameState::Main)),
+            ),
         );
 }
 
@@ -86,6 +98,19 @@ struct FundsTooltip;
 #[derive(Component)]
 #[require(Text)]
 struct FundsDisplay(FundsAmount);
+
+#[derive(Component)]
+#[require(Text, TextColor)]
+struct MeterDisplay<T: PartialOrd + ToString + Send + Sync + 'static> {
+    value: T,
+    // positive | mixed
+    low_threshold: T,
+    // mixed | high_threshold
+    high_threshold: T,
+}
+
+#[derive(Component)]
+struct SuspicionUi;
 
 #[derive(Component)]
 struct RegionUi;
@@ -137,6 +162,15 @@ fn setup_map(
         ))
         .id();
 
+    let text_font = TextFont {
+        font: font_handle.0.clone(),
+        ..default()
+    };
+    let unicode_text_font = TextFont {
+        font: unicode_font_handle.0.clone(),
+        ..default()
+    };
+
     commands
         .spawn(Node {
             flex_direction: FlexDirection::Column,
@@ -167,10 +201,7 @@ fn setup_map(
                             ..default()
                         },
                         // will be updated by on_funds_changed
-                        TextFont {
-                            font: font_handle.0.clone(),
-                            ..default()
-                        },
+                        text_font.clone(),
                         FundsDisplay(0),
                         FundsUi,
                         Tooltip {
@@ -188,16 +219,27 @@ fn setup_map(
                     // Game date display
                     parent.spawn((
                         Node {
-                            padding: UiRect::right(px(5)),
+                            min_width: px(150),
                             ..default()
                         },
                         // will be updated by on_game_date_changed
-                        TextFont {
-                            font: font_handle.0.clone(),
-                            ..default()
-                        },
+                        text_font.clone(),
                         TextKey::new_no_args("game-date-display"),
                         GameDateUi,
+                    ));
+                    // Suspicion meter
+                    parent.spawn((
+                        Node {
+                            min_width: px(100),
+                            ..Default::default()
+                        },
+                        text_font.clone(),
+                        MeterDisplay::<u32> {
+                            value: 0,
+                            low_threshold: 34,
+                            high_threshold: 67,
+                        },
+                        SuspicionUi,
                     ));
                     // Separate left-aligned and right-aligned status fields
                     parent.spawn(Node {
@@ -214,10 +256,7 @@ fn setup_map(
                         // DOUBLE VERTICAL LINE
                         Text("\u{2016}".to_string()),
                         TextColor::from(TEXT),
-                        TextFont {
-                            font: unicode_font_handle.0.clone(),
-                            ..default()
-                        },
+                        unicode_text_font.clone(),
                         TextLayout::new_with_justify(Justify::Center),
                     ));
                     parent.spawn((
@@ -229,10 +268,7 @@ fn setup_map(
                         }, // RIGHTWARDS ARROW
                         Text("\u{2192}".to_string()),
                         TextColor::from(TEXT_HIGHLIGHT),
-                        TextFont {
-                            font: unicode_font_handle.0.clone(),
-                            ..default()
-                        },
+                        unicode_text_font.clone(),
                         TextLayout::new_with_justify(Justify::Center),
                     ));
                     parent.spawn((
@@ -244,10 +280,7 @@ fn setup_map(
                         }, // RIGHTWARDS PAIRED ARROWS
                         Text("\u{21C9}".to_string()),
                         TextColor::from(TEXT),
-                        TextFont {
-                            font: unicode_font_handle.0.clone(),
-                            ..default()
-                        },
+                        unicode_text_font.clone(),
                         TextLayout::new_with_justify(Justify::Center),
                     ));
                     parent.spawn((
@@ -259,10 +292,7 @@ fn setup_map(
                         }, // THREE RIGHTWARDS ARROWS
                         Text("\u{21F6}".to_string()),
                         TextColor::from(TEXT),
-                        TextFont {
-                            font: unicode_font_handle.0.clone(),
-                            ..default()
-                        },
+                        unicode_text_font.clone(),
                         TextLayout::new_with_justify(Justify::Center),
                     ));
                 });
@@ -284,8 +314,6 @@ fn setup_map(
     commands.add_observer(on_game_date_changed_funds_tooltip);
     commands.add_observer(on_funds_changed);
     commands.add_observer(on_game_date_changed);
-    commands.trigger(FundsChangedEvent);
-    commands.trigger(GameDateChangedEvent);
 }
 
 fn on_game_date_changed(
@@ -512,6 +540,43 @@ fn on_changed_follower<E: EntityEvent>(
         .collect();
 
     commands.spawn_batch(bundles);
+}
+
+fn update_suspicion(
+    suspicion: Res<Suspicion>,
+    mut suspicion_ui: Single<&mut MeterDisplay<u32>, With<SuspicionUi>>,
+) {
+    suspicion_ui.value = suspicion.0;
+}
+
+fn update_meter_display<T: PartialOrd + ToString + Send + Sync + 'static>(
+    mut meters: Query<(&mut Text, &mut TextColor, &MeterDisplay<T>), Changed<MeterDisplay<T>>>,
+) {
+    for (mut text, mut text_color, meter) in meters.iter_mut() {
+        text.0 = meter.value.to_string();
+
+        if meter.low_threshold < meter.high_threshold {
+            // POS | MIX | NEG
+            *text_color = if meter.value < meter.low_threshold {
+                TEXT_POSITIVE
+            } else if meter.value >= meter.low_threshold && meter.value < meter.high_threshold {
+                TEXT_MIXED
+            } else {
+                TEXT_NEGATIVE
+            }
+            .into();
+        } else {
+            // NEG | MIX | POS
+            *text_color = if meter.value < meter.high_threshold {
+                TEXT_POSITIVE
+            } else if meter.value >= meter.high_threshold && meter.value < meter.low_threshold {
+                TEXT_MIXED
+            } else {
+                TEXT_NEGATIVE
+            }
+            .into();
+        }
+    }
 }
 
 fn update_funds_displays(

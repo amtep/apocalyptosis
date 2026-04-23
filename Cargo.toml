@@ -17,6 +17,7 @@ icu = "2.2.0"
 line-numbers = "0.4.0"
 pyri_tooltip = "0.6.0"
 rand = "0.10.1"
+rand_distr = "0.6.0"
 serde = "1.0.228"
 serde_derive = "1.0.228"
 strum = { version = "0.28.0", features = ["derive"] }
