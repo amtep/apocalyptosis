@@ -17,6 +17,10 @@ pub fn plugin(app: &mut App) {
                 MainSetupSet::Late,
             )
                 .chain(),
+        )
+        .configure_sets(
+            Update,
+            (UpdateSet::GameState, UpdateSet::Ui, UpdateSet::UiCleanup).chain(),
         );
 }
 
@@ -36,6 +40,13 @@ pub enum MainSetupSet {
     Followers,
     Ui,
     Late,
+}
+
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone, Copy)]
+pub enum UpdateSet {
+    GameState,
+    Ui,
+    UiCleanup,
 }
 
 #[derive(Resource)]

@@ -1,13 +1,6 @@
 use std::collections::HashMap;
 
 use bevy::{input_focus::InputFocus, prelude::*, window::WindowResized};
-use chrono::Datelike;
-use fluent::FluentArgs;
-use fluent_datetime::{FluentDateTime, length};
-use icu::{
-    calendar::Date,
-    time::{DateTime, Time},
-};
 use pyri_tooltip::{
     Tooltip, TooltipActivation, TooltipContent, TooltipDismissal, TooltipPlacement, TooltipTransfer,
 };
@@ -19,9 +12,9 @@ use crate::{
     followers::Follower,
     funds::{Expense, ExpenseCategory, Funds, FundsAmount, Income, IncomeCategory},
     regions::{BasePlot, Location, Region},
-    state::{GameState, MainSetupSet},
+    state::{GameState, MainSetupSet, UpdateSet},
     suspicion::{IntelligenceSuspicion, MediaSuspicion, PoliceSuspicion, ScientificSuspicion},
-    text::{FluentBundleWrapper, TextKey},
+    text::TextKey,
     time::{CurrentGameSpeed, GameDate, GameSpeed, GameSpeedAction, GameSpeedChangedEvent},
     ui::buttons::setup_observe_buttons,
 };
@@ -40,17 +33,27 @@ pub fn plugin(app: &mut App) {
         )
         .add_systems(
             Update,
-            update_regional_suspicion.run_if(in_state(GameState::Main)),
+            update_regional_suspicion
+                .run_if(in_state(GameState::Main))
+                .in_set(UpdateSet::Ui),
         )
         .add_systems(
             Update,
             update_game_date
-                .run_if(resource_exists_and_changed::<GameDate>.and(in_state(GameState::Main))),
+                .run_if(resource_exists_and_changed::<GameDate>.and(in_state(GameState::Main)))
+                .in_set(UpdateSet::Ui),
         )
         .add_systems(
             Update,
-            (update_funds, update_funds_tooltip)
-                .run_if(resource_exists_and_changed::<Funds>.and(in_state(GameState::Main))),
+            funds_changed
+                .run_if(resource_exists_and_changed::<Funds>.and(in_state(GameState::Main)))
+                .in_set(UpdateSet::Ui),
+        )
+        .add_systems(
+            Update,
+            update_funds_tooltip
+                .run_if(resource_exists_and_changed::<Funds>.and(in_state(GameState::Main)))
+                .in_set(UpdateSet::Ui),
         )
         .add_systems(
             Update,
@@ -62,13 +65,17 @@ pub fn plugin(app: &mut App) {
         )
         .add_systems(
             Update,
-            update_game_speed_state.run_if(
-                resource_exists_and_changed::<CurrentGameSpeed>.and(in_state(GameState::Main)),
-            ),
+            update_game_speed_state
+                .run_if(
+                    resource_exists_and_changed::<CurrentGameSpeed>.and(in_state(GameState::Main)),
+                )
+                .in_set(UpdateSet::Ui),
         )
         .add_systems(
-            PostUpdate,
-            (update_funds_displays, update_meter_display::<u32>).run_if(in_state(GameState::Main)),
+            Update,
+            update_meter_display::<u32>
+                .run_if(in_state(GameState::Main))
+                .in_set(UpdateSet::UiCleanup),
         );
 }
 
@@ -100,10 +107,6 @@ struct FundsUi;
 
 #[derive(Component)]
 struct FundsTooltip;
-
-#[derive(Component)]
-#[require(Text)]
-struct FundsDisplay(FundsAmount);
 
 #[derive(Component)]
 #[require(Text, TextColor)]
@@ -163,6 +166,7 @@ fn setup_map(
     font_handle: Res<FontHandle>,
     unicode_font_handle: Res<UnicodeFontHandle>,
     asset_server: Res<AssetServer>,
+    game_date: Res<GameDate>,
 ) {
     let tooltip_content = commands
         .spawn((
@@ -218,9 +222,9 @@ fn setup_map(
                             min_width: px(75),
                             ..default()
                         },
-                        // will be updated by on_funds_changed
                         text_font.clone(),
-                        FundsDisplay(0),
+                        // will be updated by funds_changed
+                        TextKey::with_arg("funds-display", "funds", 0),
                         FundsUi,
                         Tooltip {
                             content: TooltipContent::Custom(tooltip_content),
@@ -240,9 +244,9 @@ fn setup_map(
                             min_width: px(125),
                             ..default()
                         },
-                        // will be updated by on_game_date_changed
                         text_font.clone(),
-                        TextKey::new_no_args("game-date-display"),
+                        // will be updated by update_game_date
+                        TextKey::with_arg("game-date-display", "date", game_date.0),
                         GameDateUi,
                     ));
                     // Suspicion meters
@@ -354,25 +358,14 @@ fn setup_map(
 }
 
 fn update_game_date(
-    date: Res<GameDate>,
-    mut text: Single<(&mut Text, &TextKey), With<GameDateUi>>,
-    bundle: Res<FluentBundleWrapper>,
+    game_date: Res<GameDate>,
+    mut text_key: Single<&mut TextKey, With<GameDateUi>>,
 ) {
-    // Do a little dance
-    let date = Date::try_new_iso(date.0.year(), date.0.month() as u8, date.0.day() as u8).unwrap();
-    let datetime = DateTime {
-        date,
-        time: Time::start_of_day(),
-    };
-    let mut datetime: FluentDateTime = datetime.into();
-    datetime.options.set_date_style(Some(length::Date::Long));
-    let mut args = FluentArgs::new();
-    args.set("date", datetime);
-    text.0.0 = text.1.get(&bundle, &args);
+    text_key.1[0].1 = game_date.0.into();
 }
 
-fn update_funds(funds: Res<Funds>, mut funds_display: Single<&mut FundsDisplay, With<FundsUi>>) {
-    funds_display.0 = funds.0;
+fn funds_changed(funds: Res<Funds>, mut text_key: Single<&mut TextKey, With<FundsUi>>) {
+    text_key.1[0].1 = funds.0.into();
 }
 
 fn setup_regions(
@@ -382,7 +375,6 @@ fn setup_regions(
     base_plots: Query<&Location, With<BasePlot>>,
     display_font_handle: Res<DisplayFontHandle>,
     font_handle: Res<FontHandle>,
-    bundle: Res<FluentBundleWrapper>,
 ) {
     for (entity, region, location, children) in regions.iter() {
         commands
@@ -412,7 +404,7 @@ fn setup_regions(
             .observe(on_label_out)
             .with_children(|parent| {
                 parent.spawn((
-                    TextKey::new(format!("region-{}", region.name), &bundle),
+                    TextKey::new(format!("region-{}", region.name)),
                     TextFont {
                         font: display_font_handle.0.clone(),
                         ..default()
@@ -460,7 +452,6 @@ fn setup_regions(
                     ],
                 ));
             });
-
         for child in children {
             let location = base_plots.get(*child).unwrap();
             commands.spawn((
@@ -513,7 +504,6 @@ fn on_spawn_base(
     base_plot_uis: Query<&BasePlotUi>,
     base_types: Query<&Basetype, With<Base>>,
     font_handle: Res<FontHandle>,
-    bundle: Res<FluentBundleWrapper>,
 ) {
     let base_plot = bases.get(event.entity).unwrap().0;
     let (region, base_plot_views) = base_plots.get(base_plot).unwrap();
@@ -554,7 +544,7 @@ fn on_spawn_base(
         .observe(on_label_out)
         .with_children(|parent| {
             parent.spawn((
-                TextKey::new(format!("basetype-{}", &base_type.name), &bundle),
+                TextKey::new(format!("basetype-{}", &base_type.name)),
                 TextFont {
                     font_size: 14.0,
                     font: font_handle.0.clone(),
@@ -709,17 +699,6 @@ fn update_meter_display<T: PartialOrd + ToString + Send + Sync + 'static>(
     }
 }
 
-fn update_funds_displays(
-    mut q: Query<(&mut Text, &FundsDisplay), Changed<FundsDisplay>>,
-    bundle: Res<FluentBundleWrapper>,
-) {
-    for (mut text, funds) in &mut q {
-        let mut args = FluentArgs::new();
-        args.set("funds", funds.0);
-        text.0 = bundle.get("funds", Some(&args));
-    }
-}
-
 fn on_game_speed_clicked(
     click: On<Pointer<Click>>,
     mut commands: Commands,
@@ -771,7 +750,6 @@ fn update_funds_tooltip(
     expenses: Query<&Expense>,
     tooltip: Single<Entity, With<FundsTooltip>>,
     font_handle: Res<FontHandle>,
-    bundle: Res<FluentBundleWrapper>,
 ) {
     fn income_expense_row(
         mut commands: Commands,
@@ -780,7 +758,6 @@ fn update_funds_tooltip(
         category: String,
         count: usize,
         funds: FundsAmount,
-        bundle: &Res<FluentBundleWrapper>,
     ) {
         commands
             .spawn((
@@ -790,13 +767,16 @@ fn update_funds_tooltip(
             ))
             .with_children(|parent| {
                 parent.spawn((Text::new(format!("{count}x ")), text_font.clone()));
-                parent.spawn((TextKey::new(category, bundle), text_font.clone()));
+                parent.spawn((TextKey::new(category), text_font.clone()));
                 parent.spawn(Node {
                     flex_grow: 1.0,
                     padding: UiRect::left(px(5)),
                     ..default()
                 });
-                parent.spawn((FundsDisplay(funds), text_font.clone()));
+                parent.spawn((
+                    TextKey::with_arg("funds", "funds", funds),
+                    text_font.clone(),
+                ));
             });
     }
 
@@ -820,7 +800,7 @@ fn update_funds_tooltip(
         ChildOf(tooltip),
     );
     commands.spawn((
-        TextKey::new("income-tooltip-header", &bundle),
+        TextKey::new("income-tooltip-header"),
         text_font.clone(),
         ChildOf(tooltip),
     ));
@@ -843,12 +823,11 @@ fn update_funds_tooltip(
                 category,
                 *count,
                 *funds,
-                &bundle,
             );
         }
     }
     commands.spawn((
-        TextKey::new("expense-tooltip-header", &bundle),
+        TextKey::new("expense-tooltip-header"),
         text_font.clone(),
         ChildOf(tooltip),
     ));
@@ -870,7 +849,6 @@ fn update_funds_tooltip(
                 category,
                 *count,
                 *funds,
-                &bundle,
             );
         }
     }
