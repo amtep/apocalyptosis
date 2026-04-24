@@ -22,7 +22,7 @@ use crate::{
     },
     regions::{BasePlot, Location, Region},
     state::{GameState, MainSetupSet},
-    suspicion::{Suspicion, SuspicionChangedEvent},
+    suspicion::{IntelligenceSuspicion, ScientificSuspicion, SuspicionsChangedEvent},
     text::{FluentBundleWrapper, TextKey},
     time::{
         CurrentGameSpeed, GameDate, GameDateChangedEvent, GameSpeed, GameSpeedAction,
@@ -99,7 +99,10 @@ struct MeterDisplay<T: PartialOrd + ToString + Send + Sync + 'static> {
 }
 
 #[derive(Component)]
-struct SuspicionUi;
+struct IntelligenceSuspicionUi;
+
+#[derive(Component)]
+struct ScientificSuspicionUi;
 
 #[derive(Component)]
 struct RegionUi;
@@ -216,7 +219,20 @@ fn setup_map(
                         TextKey::new_no_args("game-date-display"),
                         GameDateUi,
                     ));
-                    // Suspicion meter
+                    // Suspicion meters
+                    parent.spawn((
+                        Node {
+                            min_width: px(50),
+                            ..Default::default()
+                        },
+                        text_font.clone(),
+                        MeterDisplay::<u32> {
+                            value: 0,
+                            low_threshold: 34,
+                            high_threshold: 67,
+                        },
+                        IntelligenceSuspicionUi,
+                    ));
                     parent.spawn((
                         Node {
                             min_width: px(100),
@@ -228,7 +244,7 @@ fn setup_map(
                             low_threshold: 34,
                             high_threshold: 67,
                         },
-                        SuspicionUi,
+                        ScientificSuspicionUi,
                     ));
                     // Separate left-aligned and right-aligned status fields
                     parent.spawn(Node {
@@ -300,11 +316,13 @@ fn setup_map(
             ));
         });
 
-    commands.add_observer(on_game_date_changed_funds_tooltip);
+    commands.add_observer(on_funds_changed_tooltip);
     commands.add_observer(on_funds_changed);
     commands.add_observer(on_game_date_changed);
-    commands.add_observer(on_suspicion_changed);
+    commands.add_observer(on_suspicions_changed);
     commands.add_observer(on_game_speed_state_changed);
+    commands.trigger(FundsChangedEvent);
+    commands.trigger(GameDateChangedEvent);
 }
 
 fn on_game_date_changed(
@@ -533,12 +551,27 @@ fn on_changed_follower<E: EntityEvent>(
     commands.spawn_batch(bundles);
 }
 
-fn on_suspicion_changed(
-    _: On<SuspicionChangedEvent>,
-    suspicion: Res<Suspicion>,
-    mut suspicion_ui: Single<&mut MeterDisplay<u32>, With<SuspicionUi>>,
+fn on_suspicions_changed(
+    _: On<SuspicionsChangedEvent>,
+    intel_suspicion: Res<IntelligenceSuspicion>,
+    scien_suspicion: Res<ScientificSuspicion>,
+    mut intel_suspicion_ui: Single<
+        &mut MeterDisplay<u32>,
+        (
+            With<IntelligenceSuspicionUi>,
+            Without<ScientificSuspicionUi>,
+        ),
+    >,
+    mut scien_suspicion_ui: Single<
+        &mut MeterDisplay<u32>,
+        (
+            With<ScientificSuspicionUi>,
+            Without<IntelligenceSuspicionUi>,
+        ),
+    >,
 ) {
-    suspicion_ui.value = suspicion.0;
+    intel_suspicion_ui.value = intel_suspicion.0;
+    scien_suspicion_ui.value = scien_suspicion.0;
 }
 
 fn update_meter_display<T: PartialOrd + ToString + Send + Sync + 'static>(
@@ -623,7 +656,7 @@ fn update_speed_buttons(
     }
 }
 
-fn on_game_date_changed_funds_tooltip(
+fn on_funds_changed_tooltip(
     _: On<FundsChangedEvent>,
     mut commands: Commands,
     incomes: Query<&Income>,
