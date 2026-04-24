@@ -60,8 +60,12 @@ pub enum GameSpeedAction {
 #[derive(Event)]
 pub struct GameSpeedChangedEvent(pub GameSpeedAction);
 
+#[derive(Event)]
+pub struct GameSpeedStateChangedEvent;
+
 fn on_game_speed_changed(
     event: On<GameSpeedChangedEvent>,
+    mut commands: Commands,
     mut time: ResMut<Time<Virtual>>,
     mut current_game_speed: ResMut<CurrentGameSpeed>,
 ) {
@@ -91,6 +95,8 @@ fn on_game_speed_changed(
             current_game_speed.paused = !current_game_speed.paused;
         }
     }
+
+    commands.trigger(GameSpeedStateChangedEvent);
 }
 
 fn listen_speed_keys(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>) {

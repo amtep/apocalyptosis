@@ -22,11 +22,11 @@ use crate::{
     },
     regions::{BasePlot, Location, Region},
     state::{GameState, MainSetupSet},
-    suspicion::Suspicion,
+    suspicion::{Suspicion, SuspicionChangedEvent},
     text::{FluentBundleWrapper, TextKey},
     time::{
         CurrentGameSpeed, GameDate, GameDateChangedEvent, GameSpeed, GameSpeedAction,
-        GameSpeedChangedEvent,
+        GameSpeedChangedEvent, GameSpeedStateChangedEvent,
     },
 };
 
@@ -51,17 +51,6 @@ pub fn plugin(app: &mut App) {
                 )
                     .run_if(in_state(GameState::Main)),
                 buttons::update_button_backgrounds,
-            ),
-        )
-        .add_systems(
-            Update,
-            update_suspicion
-                .run_if(resource_exists_and_changed::<Suspicion>.and(in_state(GameState::Main))),
-        )
-        .add_systems(
-            Update,
-            update_game_speed_state.run_if(
-                resource_exists_and_changed::<CurrentGameSpeed>.and(in_state(GameState::Main)),
             ),
         );
 }
@@ -314,6 +303,8 @@ fn setup_map(
     commands.add_observer(on_game_date_changed_funds_tooltip);
     commands.add_observer(on_funds_changed);
     commands.add_observer(on_game_date_changed);
+    commands.add_observer(on_suspicion_changed);
+    commands.add_observer(on_game_speed_state_changed);
 }
 
 fn on_game_date_changed(
@@ -542,7 +533,8 @@ fn on_changed_follower<E: EntityEvent>(
     commands.spawn_batch(bundles);
 }
 
-fn update_suspicion(
+fn on_suspicion_changed(
+    _: On<SuspicionChangedEvent>,
     suspicion: Res<Suspicion>,
     mut suspicion_ui: Single<&mut MeterDisplay<u32>, With<SuspicionUi>>,
 ) {
@@ -590,7 +582,8 @@ fn update_funds_displays(
     }
 }
 
-fn update_game_speed_state(
+fn on_game_speed_state_changed(
+    _: On<GameSpeedStateChangedEvent>,
     current_game_speed: Res<CurrentGameSpeed>,
     mut game_speed_buttons: Query<(&mut TextColor, &GameSpeedAction)>,
 ) {
