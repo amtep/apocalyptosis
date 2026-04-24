@@ -25,14 +25,18 @@ pub fn setup_observe_buttons(mut commands: Commands) {
     );
     commands.add_observer(
         |press: On<Pointer<Press>>, mut buttons: Query<&mut BackgroundColor, With<Button>>| {
-            if let Ok(mut background) = buttons.get_mut(press.entity) {
+            if press.button == PointerButton::Primary
+                && let Ok(mut background) = buttons.get_mut(press.entity)
+            {
                 background.0 = MENU_PRESSED_BACKGROUND.into();
             }
         },
     );
     commands.add_observer(
         |click: On<Pointer<Click>>, mut buttons: Query<(&mut BackgroundColor, &mut Button)>| {
-            if let Ok((mut background, mut button)) = buttons.get_mut(click.entity) {
+            if click.button == PointerButton::Primary
+                && let Ok((mut background, mut button)) = buttons.get_mut(click.entity)
+            {
                 background.0 = MENU_HOVER_BACKGROUND.into();
                 button.set_changed();
             }

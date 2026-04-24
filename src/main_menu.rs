@@ -84,13 +84,18 @@ fn setup(mut commands: Commands, bundle: Res<FluentBundleWrapper>, asset_server:
                 })
                 .with_children(|parent| {
                     parent.spawn(button("menu-button-new-game")).observe(
-                        |_: On<Pointer<Click>>, mut game_state: ResMut<NextState<GameState>>| {
-                            game_state.set(GameState::Main);
+                        |click: On<Pointer<Click>>,
+                         mut game_state: ResMut<NextState<GameState>>| {
+                            if click.button == PointerButton::Primary {
+                                game_state.set(GameState::Main);
+                            }
                         },
                     );
                     parent.spawn(button("menu-button-quit")).observe(
-                        |_: On<Pointer<Click>>, mut exit: MessageWriter<AppExit>| {
-                            exit.write(AppExit::Success);
+                        |click: On<Pointer<Click>>, mut exit: MessageWriter<AppExit>| {
+                            if click.button == PointerButton::Primary {
+                                exit.write(AppExit::Success);
+                            }
                         },
                     );
                 });

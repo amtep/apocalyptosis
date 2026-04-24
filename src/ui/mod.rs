@@ -472,6 +472,7 @@ fn on_spawn_base(
             Node {
                 flex_direction: FlexDirection::Column,
                 border: UiRect::all(px(1)),
+                border_radius: BorderRadius::all(px(5)),
                 padding: UiRect::horizontal(px(2)),
                 align_items: AlignItems::Center,
                 ..default()
@@ -623,8 +624,10 @@ fn on_game_speed_clicked(
     mut commands: Commands,
     game_speed_actions: Query<&GameSpeedAction>,
 ) {
-    let game_speed_action = *game_speed_actions.get(click.entity).unwrap();
-    commands.trigger(GameSpeedChangedEvent(game_speed_action));
+    if click.button == PointerButton::Primary {
+        let game_speed_action = *game_speed_actions.get(click.entity).unwrap();
+        commands.trigger(GameSpeedChangedEvent(game_speed_action));
+    }
 }
 
 fn on_game_speed_state_changed(
