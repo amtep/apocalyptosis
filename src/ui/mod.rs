@@ -28,6 +28,7 @@ use crate::{
         CurrentGameSpeed, GameDate, GameDateChangedEvent, GameSpeed, GameSpeedAction,
         GameSpeedChangedEvent, GameSpeedStateChangedEvent,
     },
+    ui::buttons::setup_observe_buttons,
 };
 
 mod buttons;
@@ -36,6 +37,7 @@ pub fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Load), setup_fonts)
         .init_resource::<UiScale>()
         .init_resource::<InputFocus>()
+        .add_systems(OnExit(GameState::Load), setup_observe_buttons)
         .add_systems(Update, read_window_resized_messages)
         .add_systems(
             OnEnter(GameState::Main),
@@ -43,15 +45,8 @@ pub fn plugin(app: &mut App) {
         )
         .add_systems(
             Update,
-            (
-                (
-                    update_speed_buttons,
-                    update_funds_displays,
-                    update_meter_display::<u32>,
-                )
-                    .run_if(in_state(GameState::Main)),
-                buttons::update_button_backgrounds,
-            ),
+            ((update_funds_displays, update_meter_display::<u32>)
+                .run_if(in_state(GameState::Main)),),
         );
 }
 
@@ -251,55 +246,63 @@ fn setup_map(
                         flex_grow: 1.0,
                         ..default()
                     });
-                    parent.spawn((
-                        Button,
-                        GameSpeedAction::TogglePause,
-                        Node {
-                            width: px(25),
-                            ..Default::default()
-                        }, // 23F8 DOUBLE VERTICAL BAR would be better but is not in the font.
-                        // DOUBLE VERTICAL LINE
-                        Text("\u{2016}".to_string()),
-                        TextColor::from(TEXT),
-                        unicode_text_font.clone(),
-                        TextLayout::new_with_justify(Justify::Center),
-                    ));
-                    parent.spawn((
-                        Button,
-                        GameSpeedAction::SetSpeed(GameSpeed::Normal),
-                        Node {
-                            width: px(25),
-                            ..Default::default()
-                        }, // RIGHTWARDS ARROW
-                        Text("\u{2192}".to_string()),
-                        TextColor::from(TEXT_HIGHLIGHT),
-                        unicode_text_font.clone(),
-                        TextLayout::new_with_justify(Justify::Center),
-                    ));
-                    parent.spawn((
-                        Button,
-                        GameSpeedAction::SetSpeed(GameSpeed::Fast),
-                        Node {
-                            width: px(25),
-                            ..Default::default()
-                        }, // RIGHTWARDS PAIRED ARROWS
-                        Text("\u{21C9}".to_string()),
-                        TextColor::from(TEXT),
-                        unicode_text_font.clone(),
-                        TextLayout::new_with_justify(Justify::Center),
-                    ));
-                    parent.spawn((
-                        Button,
-                        GameSpeedAction::SetSpeed(GameSpeed::Faster),
-                        Node {
-                            width: px(25),
-                            ..Default::default()
-                        }, // THREE RIGHTWARDS ARROWS
-                        Text("\u{21F6}".to_string()),
-                        TextColor::from(TEXT),
-                        unicode_text_font.clone(),
-                        TextLayout::new_with_justify(Justify::Center),
-                    ));
+                    parent
+                        .spawn((
+                            Button,
+                            GameSpeedAction::TogglePause,
+                            Node {
+                                width: px(25),
+                                ..Default::default()
+                            }, // 23F8 DOUBLE VERTICAL BAR would be better but is not in the font.
+                            // DOUBLE VERTICAL LINE
+                            Text("\u{2016}".to_string()),
+                            TextColor::from(TEXT),
+                            unicode_text_font.clone(),
+                            TextLayout::new_with_justify(Justify::Center),
+                        ))
+                        .observe(on_game_speed_clicked);
+                    parent
+                        .spawn((
+                            Button,
+                            GameSpeedAction::SetSpeed(GameSpeed::Normal),
+                            Node {
+                                width: px(25),
+                                ..Default::default()
+                            }, // RIGHTWARDS ARROW
+                            Text("\u{2192}".to_string()),
+                            TextColor::from(TEXT_HIGHLIGHT),
+                            unicode_text_font.clone(),
+                            TextLayout::new_with_justify(Justify::Center),
+                        ))
+                        .observe(on_game_speed_clicked);
+                    parent
+                        .spawn((
+                            Button,
+                            GameSpeedAction::SetSpeed(GameSpeed::Fast),
+                            Node {
+                                width: px(25),
+                                ..Default::default()
+                            }, // RIGHTWARDS PAIRED ARROWS
+                            Text("\u{21C9}".to_string()),
+                            TextColor::from(TEXT),
+                            unicode_text_font.clone(),
+                            TextLayout::new_with_justify(Justify::Center),
+                        ))
+                        .observe(on_game_speed_clicked);
+                    parent
+                        .spawn((
+                            Button,
+                            GameSpeedAction::SetSpeed(GameSpeed::Faster),
+                            Node {
+                                width: px(25),
+                                ..Default::default()
+                            }, // THREE RIGHTWARDS ARROWS
+                            Text("\u{21F6}".to_string()),
+                            TextColor::from(TEXT),
+                            unicode_text_font.clone(),
+                            TextLayout::new_with_justify(Justify::Center),
+                        ))
+                        .observe(on_game_speed_clicked);
                 });
             parent.spawn((
                 ImageNode {
@@ -615,6 +618,15 @@ fn update_funds_displays(
     }
 }
 
+fn on_game_speed_clicked(
+    click: On<Pointer<Click>>,
+    mut commands: Commands,
+    game_speed_actions: Query<&GameSpeedAction>,
+) {
+    let game_speed_action = *game_speed_actions.get(click.entity).unwrap();
+    commands.trigger(GameSpeedChangedEvent(game_speed_action));
+}
+
 fn on_game_speed_state_changed(
     _: On<GameSpeedStateChangedEvent>,
     current_game_speed: Res<CurrentGameSpeed>,
@@ -628,30 +640,6 @@ fn on_game_speed_state_changed(
             *text_color = TEXT_HIGHLIGHT.into();
         } else {
             *text_color = TEXT.into();
-        }
-    }
-}
-
-fn update_speed_buttons(
-    mut commands: Commands,
-    mut input_focus: ResMut<InputFocus>,
-    mut q: Query<(Entity, &Interaction, &mut Button, &GameSpeedAction), Changed<Interaction>>,
-) {
-    for (entity, interaction, mut button, game_speed_action) in &mut q {
-        match *interaction {
-            Interaction::Pressed => {
-                input_focus.set(entity);
-                // alert the accessibility system
-                button.set_changed();
-                commands.trigger(GameSpeedChangedEvent(*game_speed_action));
-            }
-            Interaction::Hovered => {
-                input_focus.set(entity);
-                button.set_changed();
-            }
-            Interaction::None => {
-                input_focus.clear();
-            }
         }
     }
 }
