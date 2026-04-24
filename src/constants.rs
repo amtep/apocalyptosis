@@ -33,6 +33,7 @@ pub mod ui {
     pub const TEXT: Srgba = WHITE;
     pub const BORDER: Srgba = WHITE;
     pub const TEXT_HIGHLIGHT: Srgba = YELLOW;
+    pub const BORDER_HIGHLIGHT: Srgba = YELLOW;
     pub const TEXT_POSITIVE: Srgba = GREEN;
     pub const TEXT_MIXED: Srgba = ORANGE;
     pub const TEXT_NEGATIVE: Srgba = RED;

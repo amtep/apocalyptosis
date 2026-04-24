@@ -415,6 +415,8 @@ fn setup_regions(
                         BorderColor::all(BORDER),
                         BackgroundColor::from(MENU_BACKGROUND),
                     ))
+                    .observe(on_region_over)
+                    .observe(on_region_out)
                     .with_child((
                         TextKey::new(format!("region-{}", region.name), &bundle),
                         TextFont {
@@ -730,6 +732,17 @@ fn on_game_speed_clicked(
         let game_speed_action = *game_speed_actions.get(click.entity).unwrap();
         commands.trigger(GameSpeedChangedEvent(game_speed_action));
     }
+}
+
+fn on_region_over(event: On<Pointer<Over>>, mut border_colors: Query<&mut BorderColor>) {
+    border_colors
+        .get_mut(event.entity)
+        .unwrap()
+        .set_all(BORDER_HIGHLIGHT);
+}
+
+fn on_region_out(event: On<Pointer<Out>>, mut border_colors: Query<&mut BorderColor>) {
+    border_colors.get_mut(event.entity).unwrap().set_all(BORDER);
 }
 
 fn update_game_speed_state(
