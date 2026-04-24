@@ -8,7 +8,10 @@ pub fn plugin(app: &mut App) {
         OnEnter(GameState::Main),
         setup.in_set(MainSetupSet::Default),
     )
-    .add_systems(FixedUpdate, fixed_update.run_if(in_state(GameState::Main)))
+    .add_systems(
+        FixedPreUpdate,
+        fixed_pre_update.run_if(in_state(GameState::Main)),
+    )
     .add_systems(Update, listen_speed_keys.run_if(in_state(GameState::Main)));
 }
 
@@ -34,13 +37,9 @@ pub struct CurrentGameSpeed {
     pub speed: GameSpeed,
 }
 
-#[derive(Event)]
-pub struct GameDateChangedEvent;
-
-fn fixed_update(mut commands: Commands, mut date: ResMut<GameDate>) {
+fn fixed_pre_update(mut date: ResMut<GameDate>) {
     // We don't expect to reach 262000 AD
     date.0 = date.0 + Days::new(1);
-    commands.trigger(GameDateChangedEvent);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -60,12 +59,8 @@ pub enum GameSpeedAction {
 #[derive(Event)]
 pub struct GameSpeedChangedEvent(pub GameSpeedAction);
 
-#[derive(Event)]
-pub struct GameSpeedStateChangedEvent;
-
 fn on_game_speed_changed(
     event: On<GameSpeedChangedEvent>,
-    mut commands: Commands,
     mut time: ResMut<Time<Virtual>>,
     mut current_game_speed: ResMut<CurrentGameSpeed>,
 ) {
@@ -95,8 +90,6 @@ fn on_game_speed_changed(
             current_game_speed.paused = !current_game_speed.paused;
         }
     }
-
-    commands.trigger(GameSpeedStateChangedEvent);
 }
 
 fn listen_speed_keys(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>) {

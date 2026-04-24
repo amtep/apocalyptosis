@@ -17,17 +17,12 @@ use crate::{
     bases::{Base, Basetype},
     constants::ui::*,
     followers::Follower,
-    funds::{
-        Expense, ExpenseCategory, Funds, FundsAmount, FundsChangedEvent, Income, IncomeCategory,
-    },
+    funds::{Expense, ExpenseCategory, Funds, FundsAmount, Income, IncomeCategory},
     regions::{BasePlot, Location, Region},
     state::{GameState, MainSetupSet},
-    suspicion::{IntelligenceSuspicion, ScientificSuspicion, SuspicionsChangedEvent},
+    suspicion::{IntelligenceSuspicion, ScientificSuspicion},
     text::{FluentBundleWrapper, TextKey},
-    time::{
-        CurrentGameSpeed, GameDate, GameDateChangedEvent, GameSpeed, GameSpeedAction,
-        GameSpeedChangedEvent, GameSpeedStateChangedEvent,
-    },
+    time::{CurrentGameSpeed, GameDate, GameSpeed, GameSpeedAction, GameSpeedChangedEvent},
     ui::buttons::setup_observe_buttons,
 };
 
@@ -45,8 +40,31 @@ pub fn plugin(app: &mut App) {
         )
         .add_systems(
             Update,
-            ((update_funds_displays, update_meter_display::<u32>)
-                .run_if(in_state(GameState::Main)),),
+            update_game_date
+                .run_if(resource_exists_and_changed::<GameDate>.and(in_state(GameState::Main))),
+        )
+        .add_systems(
+            Update,
+            (update_funds, update_funds_tooltip)
+                .run_if(resource_exists_and_changed::<Funds>.and(in_state(GameState::Main))),
+        )
+        .add_systems(
+            Update,
+            update_suspicion.run_if(
+                (resource_exists_and_changed::<IntelligenceSuspicion>
+                    .or(resource_exists_and_changed::<ScientificSuspicion>))
+                .and(in_state(GameState::Main)),
+            ),
+        )
+        .add_systems(
+            Update,
+            update_game_speed_state.run_if(
+                resource_exists_and_changed::<CurrentGameSpeed>.and(in_state(GameState::Main)),
+            ),
+        )
+        .add_systems(
+            PostUpdate,
+            (update_funds_displays, update_meter_display::<u32>).run_if(in_state(GameState::Main)),
         );
 }
 
@@ -318,18 +336,9 @@ fn setup_map(
                 MapUi,
             ));
         });
-
-    commands.add_observer(on_funds_changed_tooltip);
-    commands.add_observer(on_funds_changed);
-    commands.add_observer(on_game_date_changed);
-    commands.add_observer(on_suspicions_changed);
-    commands.add_observer(on_game_speed_state_changed);
-    commands.trigger(FundsChangedEvent);
-    commands.trigger(GameDateChangedEvent);
 }
 
-fn on_game_date_changed(
-    _: On<GameDateChangedEvent>,
+fn update_game_date(
     date: Res<GameDate>,
     mut text: Single<(&mut Text, &TextKey), With<GameDateUi>>,
     bundle: Res<FluentBundleWrapper>,
@@ -347,11 +356,7 @@ fn on_game_date_changed(
     text.0.0 = text.1.get(&bundle, &args);
 }
 
-fn on_funds_changed(
-    _: On<FundsChangedEvent>,
-    funds: Res<Funds>,
-    mut funds_display: Single<&mut FundsDisplay, With<FundsUi>>,
-) {
+fn update_funds(funds: Res<Funds>, mut funds_display: Single<&mut FundsDisplay, With<FundsUi>>) {
     funds_display.0 = funds.0;
 }
 
@@ -555,8 +560,7 @@ fn on_changed_follower<E: EntityEvent>(
     commands.spawn_batch(bundles);
 }
 
-fn on_suspicions_changed(
-    _: On<SuspicionsChangedEvent>,
+fn update_suspicion(
     intel_suspicion: Res<IntelligenceSuspicion>,
     scien_suspicion: Res<ScientificSuspicion>,
     mut intel_suspicion_ui: Single<
@@ -630,8 +634,7 @@ fn on_game_speed_clicked(
     }
 }
 
-fn on_game_speed_state_changed(
-    _: On<GameSpeedStateChangedEvent>,
+fn update_game_speed_state(
     current_game_speed: Res<CurrentGameSpeed>,
     mut game_speed_buttons: Query<(&mut TextColor, &GameSpeedAction)>,
 ) {
@@ -647,8 +650,7 @@ fn on_game_speed_state_changed(
     }
 }
 
-fn on_funds_changed_tooltip(
-    _: On<FundsChangedEvent>,
+fn update_funds_tooltip(
     mut commands: Commands,
     incomes: Query<&Income>,
     expenses: Query<&Expense>,
