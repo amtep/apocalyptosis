@@ -20,7 +20,7 @@ use crate::{
     funds::{Expense, ExpenseCategory, Funds, FundsAmount, Income, IncomeCategory},
     regions::{BasePlot, Location, Region},
     state::{GameState, MainSetupSet},
-    suspicion::{IntelligenceSuspicion, ScientificSuspicion},
+    suspicion::{IntelligenceSuspicion, MediaSuspicion, PoliceSuspicion, ScientificSuspicion},
     text::{FluentBundleWrapper, TextKey},
     time::{CurrentGameSpeed, GameDate, GameSpeed, GameSpeedAction, GameSpeedChangedEvent},
     ui::buttons::setup_observe_buttons,
@@ -37,6 +37,10 @@ pub fn plugin(app: &mut App) {
         .add_systems(
             OnEnter(GameState::Main),
             (setup_map, setup_regions).chain().in_set(MainSetupSet::Ui),
+        )
+        .add_systems(
+            Update,
+            update_regional_suspicion.run_if(in_state(GameState::Main)),
         )
         .add_systems(
             Update,
@@ -116,6 +120,15 @@ struct IntelligenceSuspicionUi;
 
 #[derive(Component)]
 struct ScientificSuspicionUi;
+
+#[derive(Component)]
+struct RegionSuspicionUi;
+
+#[derive(Component)]
+struct PoliceSuspicionUi;
+
+#[derive(Component)]
+struct MediaSuspicionUi;
 
 #[derive(Component)]
 struct RegionUi;
@@ -239,6 +252,7 @@ fn setup_map(
                             ..Default::default()
                         },
                         text_font.clone(),
+                        TextLayout::new_with_justify(Justify::Right),
                         MeterDisplay::<u32> {
                             value: 0,
                             low_threshold: 34,
@@ -248,10 +262,11 @@ fn setup_map(
                     ));
                     parent.spawn((
                         Node {
-                            min_width: px(100),
+                            min_width: px(50),
                             ..Default::default()
                         },
                         text_font.clone(),
+                        TextLayout::new_with_justify(Justify::Right),
                         MeterDisplay::<u32> {
                             value: 0,
                             low_threshold: 34,
@@ -365,7 +380,8 @@ fn setup_regions(
     map_ui: Single<Entity, With<MapUi>>,
     regions: Query<(Entity, &Region, &Location, &Children)>,
     base_plots: Query<&Location, With<BasePlot>>,
-    font_handle: Res<DisplayFontHandle>,
+    display_font_handle: Res<DisplayFontHandle>,
+    font_handle: Res<FontHandle>,
     bundle: Res<FluentBundleWrapper>,
 ) {
     for (entity, region, location, children) in regions.iter() {
@@ -389,6 +405,7 @@ fn setup_regions(
                 parent
                     .spawn((
                         Node {
+                            flex_direction: FlexDirection::Column,
                             border: UiRect::all(px(1)),
                             border_radius: BorderRadius::all(px(10)),
                             padding: UiRect::all(px(5)),
@@ -398,15 +415,54 @@ fn setup_regions(
                         BorderColor::all(BORDER),
                         BackgroundColor::from(MENU_BACKGROUND),
                     ))
-                    .with_children(|parent| {
-                        parent.spawn((
-                            TextKey::new(format!("region-{}", region.name), &bundle),
-                            TextFont {
-                                font: font_handle.0.clone(),
-                                ..default()
-                            },
-                        ));
-                    });
+                    .with_child((
+                        TextKey::new(format!("region-{}", region.name), &bundle),
+                        TextFont {
+                            font: display_font_handle.0.clone(),
+                            ..default()
+                        },
+                    ))
+                    .with_child((
+                        ViewOf(entity),
+                        RegionSuspicionUi,
+                        Node {
+                            flex_direction: FlexDirection::Row,
+                            justify_content: JustifyContent::Center,
+                            column_gap: px(10),
+                            display: Display::None,
+                            ..Default::default()
+                        },
+                        children![
+                            (
+                                TextFont {
+                                    font_size: 12.0,
+                                    font: font_handle.0.clone(),
+                                    ..default()
+                                },
+                                MeterDisplay::<u32> {
+                                    value: 0,
+                                    low_threshold: 34,
+                                    high_threshold: 67,
+                                },
+                                PoliceSuspicionUi,
+                                ViewOf(entity),
+                            ),
+                            (
+                                TextFont {
+                                    font_size: 12.0,
+                                    font: font_handle.0.clone(),
+                                    ..default()
+                                },
+                                MeterDisplay::<u32> {
+                                    value: 0,
+                                    low_threshold: 34,
+                                    high_threshold: 67,
+                                },
+                                MediaSuspicionUi,
+                                ViewOf(entity),
+                            )
+                        ],
+                    ));
             });
 
         for child in children {
@@ -454,24 +510,37 @@ fn on_location_reloaded(
 fn on_spawn_base(
     event: On<Add, Base>,
     mut commands: Commands,
-    parents: Query<&ChildOf>,
-    base_plots: Query<&Views, With<BasePlot>>,
+    bases: Query<&ChildOf, With<Base>>,
+    base_plots: Query<(&ChildOf, &Views), With<BasePlot>>,
+    regions: Query<&Views, With<Region>>,
+    mut region_suspicion_uis: Query<&mut Node, With<RegionSuspicionUi>>,
     base_plot_uis: Query<&BasePlotUi>,
-    base_types: Query<&Basetype>,
+    base_types: Query<&Basetype, With<Base>>,
     font_handle: Res<FontHandle>,
     bundle: Res<FluentBundleWrapper>,
 ) {
-    let base_plot = parents.get(event.entity).unwrap().0;
-    let base_plot_views = &base_plots.get(base_plot).unwrap().0;
+    let base_plot = bases.get(event.entity).unwrap().0;
+    let (region, base_plot_views) = base_plots.get(base_plot).unwrap();
+    let region_views = regions.get(region.0).unwrap();
+    let mut region_suspicion_ui_node = region_views
+        .iter()
+        .find(|view| region_suspicion_uis.contains(*view))
+        .map(|view| region_suspicion_uis.get_mut(view).unwrap())
+        .unwrap();
+
+    if region_suspicion_ui_node.display == Display::None {
+        region_suspicion_ui_node.display = Display::Flex;
+    }
+
     let base_plot_ui = base_plot_views
         .iter()
-        .find(|view| base_plot_uis.contains(**view))
+        .find(|view| base_plot_uis.contains(*view))
         .unwrap();
     let base_type = base_types.get(event.entity).unwrap();
 
     commands
         .spawn((
-            ChildOf(*base_plot_ui),
+            ChildOf(base_plot_ui),
             ViewOf(event.entity),
             BaseUi,
             Node {
@@ -580,6 +649,35 @@ fn update_suspicion(
 ) {
     intel_suspicion_ui.value = intel_suspicion.0;
     scien_suspicion_ui.value = scien_suspicion.0;
+}
+
+fn update_regional_suspicion(
+    regions: Query<
+        (&Views, &PoliceSuspicion, &MediaSuspicion),
+        (
+            With<Region>,
+            Or<(Changed<PoliceSuspicion>, Changed<MediaSuspicion>)>,
+        ),
+    >,
+    mut police_suspicion_uis: Query<
+        &mut MeterDisplay<u32>,
+        (With<PoliceSuspicionUi>, Without<MediaSuspicionUi>),
+    >,
+    mut media_suspicion_uis: Query<
+        &mut MeterDisplay<u32>,
+        (With<MediaSuspicionUi>, Without<PoliceSuspicionUi>),
+    >,
+) {
+    for (views, police, media) in regions.iter() {
+        for view in views.0.iter() {
+            if let Ok(mut police_suspicion_meter) = police_suspicion_uis.get_mut(*view) {
+                police_suspicion_meter.value = police.0;
+            }
+            if let Ok(mut media_suspicion_meter) = media_suspicion_uis.get_mut(*view) {
+                media_suspicion_meter.value = media.0;
+            }
+        }
+    }
 }
 
 fn update_meter_display<T: PartialOrd + ToString + Send + Sync + 'static>(

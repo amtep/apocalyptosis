@@ -31,10 +31,12 @@ struct BasetypesHandle(Handle<BasetypesAsset>);
 
 #[derive(Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "kebab-case")]
-struct BasetypeSettings {
-    people: isize,
-    cost_per_day: FundsAmount,
-    initial_cost: FundsAmount,
+pub struct BasetypeSettings {
+    pub people: isize,
+    pub cost_per_day: FundsAmount,
+    pub initial_cost: FundsAmount,
+    pub police_suspicion: u32,
+    pub media_suspicion: u32,
 }
 
 fn setup_load(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -49,7 +51,7 @@ pub struct Base;
 #[derive(Component)]
 pub struct Basetype {
     pub name: String,
-    settings: BasetypeSettings,
+    pub settings: BasetypeSettings,
 }
 
 fn new_spawn_base(

@@ -4,7 +4,10 @@ use bevy::prelude::*;
 use bevy_common_assets::toml::TomlAssetPlugin;
 use serde::Deserialize;
 
-use crate::state::{GameState, MainSetupSet};
+use crate::{
+    state::{GameState, MainSetupSet},
+    suspicion::{MediaSuspicion, PoliceSuspicion},
+};
 
 const REGIONS_ASSET_PATH: &str = "data/define.regions.toml";
 
@@ -68,7 +71,12 @@ fn setup_main(
     let regions = &regions_asset.get(regions_handle.0.id()).unwrap().0;
     for (name, settings) in regions.iter() {
         commands
-            .spawn((Region { name: name.clone() }, settings.location))
+            .spawn((
+                Region { name: name.clone() },
+                settings.location,
+                PoliceSuspicion(0),
+                MediaSuspicion(0),
+            ))
             .with_children(|parent| {
                 for (name, location) in &settings.base_plots {
                     parent.spawn((BasePlot { name: name.clone() }, *location));

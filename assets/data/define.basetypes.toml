@@ -2,8 +2,12 @@
 people = 4
 cost-per-day = 20
 initial-cost = 1200
+police-suspicion = 1
+media-suspicion = 1
 
 [old-farmhouse]
 people = 20
 cost-per-day = 60
 initial-cost = 100000
+police-suspicion = 0
+media-suspicion = 1
