@@ -237,7 +237,7 @@ fn setup_map(
                     // Game date display
                     parent.spawn((
                         Node {
-                            min_width: px(150),
+                            min_width: px(125),
                             ..default()
                         },
                         // will be updated by on_game_date_changed
@@ -393,6 +393,11 @@ fn setup_regions(
                     position_type: PositionType::Absolute,
                     left: percent(location.x),
                     top: percent(location.y),
+                    flex_direction: FlexDirection::Column,
+                    border: UiRect::all(px(1)),
+                    border_radius: BorderRadius::all(px(10)),
+                    padding: UiRect::all(px(5)),
+                    align_items: AlignItems::Center,
                     ..default()
                 },
                 UiTransform {
@@ -400,71 +405,60 @@ fn setup_regions(
                     ..Default::default()
                 },
                 RegionUi,
+                BorderColor::all(BORDER),
+                BackgroundColor::from(MENU_BACKGROUND.with_alpha(0.75)),
             ))
+            .observe(on_label_over)
+            .observe(on_label_out)
             .with_children(|parent| {
-                parent
-                    .spawn((
-                        Node {
-                            flex_direction: FlexDirection::Column,
-                            border: UiRect::all(px(1)),
-                            border_radius: BorderRadius::all(px(10)),
-                            padding: UiRect::all(px(5)),
-                            align_self: AlignSelf::Center,
-                            ..default()
-                        },
-                        BorderColor::all(BORDER),
-                        BackgroundColor::from(MENU_BACKGROUND),
-                    ))
-                    .observe(on_region_over)
-                    .observe(on_region_out)
-                    .with_child((
-                        TextKey::new(format!("region-{}", region.name), &bundle),
-                        TextFont {
-                            font: display_font_handle.0.clone(),
-                            ..default()
-                        },
-                    ))
-                    .with_child((
-                        ViewOf(entity),
-                        RegionSuspicionUi,
-                        Node {
-                            flex_direction: FlexDirection::Row,
-                            justify_content: JustifyContent::Center,
-                            column_gap: px(10),
-                            display: Display::None,
-                            ..Default::default()
-                        },
-                        children![
-                            (
-                                TextFont {
-                                    font_size: 12.0,
-                                    font: font_handle.0.clone(),
-                                    ..default()
-                                },
-                                MeterDisplay::<u32> {
-                                    value: 0,
-                                    low_threshold: 34,
-                                    high_threshold: 67,
-                                },
-                                PoliceSuspicionUi,
-                                ViewOf(entity),
-                            ),
-                            (
-                                TextFont {
-                                    font_size: 12.0,
-                                    font: font_handle.0.clone(),
-                                    ..default()
-                                },
-                                MeterDisplay::<u32> {
-                                    value: 0,
-                                    low_threshold: 34,
-                                    high_threshold: 67,
-                                },
-                                MediaSuspicionUi,
-                                ViewOf(entity),
-                            )
-                        ],
-                    ));
+                parent.spawn((
+                    TextKey::new(format!("region-{}", region.name), &bundle),
+                    TextFont {
+                        font: display_font_handle.0.clone(),
+                        ..default()
+                    },
+                ));
+                parent.spawn((
+                    ViewOf(entity),
+                    RegionSuspicionUi,
+                    Node {
+                        flex_direction: FlexDirection::Row,
+                        justify_content: JustifyContent::Center,
+                        column_gap: px(10),
+                        display: Display::None,
+                        ..Default::default()
+                    },
+                    children![
+                        (
+                            TextFont {
+                                font_size: 12.0,
+                                font: font_handle.0.clone(),
+                                ..default()
+                            },
+                            MeterDisplay::<u32> {
+                                value: 0,
+                                low_threshold: 34,
+                                high_threshold: 67,
+                            },
+                            PoliceSuspicionUi,
+                            ViewOf(entity),
+                        ),
+                        (
+                            TextFont {
+                                font_size: 12.0,
+                                font: font_handle.0.clone(),
+                                ..default()
+                            },
+                            MeterDisplay::<u32> {
+                                value: 0,
+                                low_threshold: 34,
+                                high_threshold: 67,
+                            },
+                            MediaSuspicionUi,
+                            ViewOf(entity),
+                        )
+                    ],
+                ));
             });
 
         for child in children {
@@ -554,8 +548,10 @@ fn on_spawn_base(
                 ..default()
             },
             BorderColor::all(WHITE),
-            BackgroundColor::from(MENU_BACKGROUND),
+            BackgroundColor::from(MENU_BACKGROUND.with_alpha(0.75)),
         ))
+        .observe(on_label_over)
+        .observe(on_label_out)
         .with_children(|parent| {
             parent.spawn((
                 TextKey::new(format!("basetype-{}", &base_type.name), &bundle),
@@ -612,6 +608,7 @@ fn on_changed_follower<E: EntityEvent>(
     followers.sort_unstable();
 
     let text_font = TextFont {
+        font_size: 12.0,
         font: unicode_font_handle.0.clone(),
         ..Default::default()
     };
@@ -734,15 +731,22 @@ fn on_game_speed_clicked(
     }
 }
 
-fn on_region_over(event: On<Pointer<Over>>, mut border_colors: Query<&mut BorderColor>) {
-    border_colors
-        .get_mut(event.entity)
-        .unwrap()
-        .set_all(BORDER_HIGHLIGHT);
+fn on_label_over(
+    event: On<Pointer<Over>>,
+    mut label_colors: Query<(&mut BackgroundColor, &mut BorderColor)>,
+) {
+    let (mut background_color, mut border_color) = label_colors.get_mut(event.entity).unwrap();
+    border_color.set_all(BORDER_HIGHLIGHT);
+    background_color.0.set_alpha(1.0);
 }
 
-fn on_region_out(event: On<Pointer<Out>>, mut border_colors: Query<&mut BorderColor>) {
-    border_colors.get_mut(event.entity).unwrap().set_all(BORDER);
+fn on_label_out(
+    event: On<Pointer<Out>>,
+    mut label_colors: Query<(&mut BackgroundColor, &mut BorderColor)>,
+) {
+    let (mut background_color, mut border_color) = label_colors.get_mut(event.entity).unwrap();
+    border_color.set_all(BORDER);
+    background_color.0.set_alpha(0.75);
 }
 
 fn update_game_speed_state(
