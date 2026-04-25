@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use moonshine_save::save::Save;
 use strum::{EnumIter, IntoStaticStr};
 
 use crate::{
@@ -20,23 +21,28 @@ pub fn plugin(app: &mut App) {
 
 pub type FundsAmount = i64;
 
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
 pub struct Funds(pub FundsAmount);
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+#[require(Save)]
 pub struct Expense(pub FundsAmount, pub ExpenseCategory);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, IntoStaticStr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, IntoStaticStr, Reflect)]
 #[strum(serialize_all = "lowercase")]
 pub enum ExpenseCategory {
     Followers,
     Bases,
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+#[require(Save)]
 pub struct Income(pub FundsAmount, pub IncomeCategory);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, IntoStaticStr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, IntoStaticStr, Reflect)]
 #[strum(serialize_all = "lowercase")]
 pub enum IncomeCategory {
     Jobs,

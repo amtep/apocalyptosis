@@ -9,12 +9,14 @@ dev = ["bevy/dev"]
 
 [dependencies]
 bevy_common_assets = { version = "0.16.0", features = ["toml"] }
-chrono = { version = "0.4.44", default-features = false, features = ["std"] }
+chrono = { version = "0.4.44", default-features = false, features = ["std", "serde"] }
+directories = "6.0.0"
 fluent = "0.17.0"
 fluent-datetime = "0.2.0"
 fluent-syntax = "0.12.0"
 icu = "2.2.0"
 line-numbers = "0.4.0"
+moonshine-save = "0.6.1"
 pyri_tooltip = "0.6.0"
 rand = "0.10.1"
 rand_distr = "0.6.0"

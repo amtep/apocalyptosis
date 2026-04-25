@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use bevy::prelude::*;
 use bevy_common_assets::toml::TomlAssetPlugin;
+use moonshine_save::save::Save;
 use rand::RngExt;
 use serde::Deserialize;
 
@@ -41,7 +42,9 @@ struct GeneralFollowerSettings {
     cost_per_day: FundsAmount,
 }
 
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Reflect)]
+#[reflect(Component)]
+#[require(Save)]
 pub enum Follower {
     Priest,
     Goon,

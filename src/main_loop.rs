@@ -31,6 +31,7 @@ pub fn main_loop() {
             crate::followers::plugin,
             crate::suspicion::plugin,
             crate::main_menu::plugin,
+            crate::save_load::plugin,
         ))
         .run();
 }

@@ -7,6 +7,7 @@ mod funds;
 mod main_menu;
 mod regions;
 mod rng;
+mod save_load;
 mod state;
 mod suspicion;
 mod text;

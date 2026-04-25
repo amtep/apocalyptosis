@@ -23,17 +23,21 @@ pub fn plugin(app: &mut App) {
 }
 
 // global
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
+#[reflect(Resource)]
 pub struct IntelligenceSuspicion(pub u32);
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
+#[reflect(Resource)]
 pub struct ScientificSuspicion(pub u32);
 
 // regional
-#[derive(Component, Default)]
+#[derive(Component, Default, Reflect)]
+#[reflect(Component)]
 pub struct PoliceSuspicion(pub u32);
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Reflect)]
+#[reflect(Component)]
 pub struct MediaSuspicion(pub u32);
 
 fn setup_main(mut commands: Commands) {

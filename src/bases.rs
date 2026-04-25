@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use bevy::prelude::*;
 use bevy_common_assets::toml::TomlAssetPlugin;
+use moonshine_save::save::Save;
 use rand::RngExt;
 use serde_derive::Deserialize;
 
@@ -32,7 +33,7 @@ struct BasetypesAsset(HashMap<String, BasetypeSettings>);
 #[derive(Resource)]
 struct BasetypesHandle(Handle<BasetypesAsset>);
 
-#[derive(Deserialize, Debug, Clone, Copy)]
+#[derive(Deserialize, Debug, Clone, Copy, Reflect)]
 #[serde(rename_all = "kebab-case")]
 pub struct BasetypeSettings {
     pub people: isize,
@@ -47,11 +48,14 @@ fn setup_load(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 /// A marker component for bases in the game state.
-#[derive(Component)]
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+#[require(Save)]
 pub struct Base;
 
 /// The `String` is the key for the base type in the `Basetypes` asset.
-#[derive(Component)]
+#[derive(Component, Reflect)]
+#[reflect(Component)]
 pub struct Basetype {
     pub name: String,
     pub settings: BasetypeSettings,

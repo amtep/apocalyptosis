@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use bevy::prelude::*;
 use bevy_common_assets::toml::TomlAssetPlugin;
+use moonshine_save::save::Save;
 use serde::Deserialize;
 
 use crate::{
@@ -28,7 +29,8 @@ struct RegionsAsset(HashMap<String, RegionSettings>);
 #[derive(Resource)]
 struct RegionsHandle(Handle<RegionsAsset>);
 
-#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Component)]
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Component, Reflect)]
+#[reflect(Component)]
 pub struct Location {
     pub x: f32,
     pub y: f32,
@@ -42,12 +44,16 @@ pub struct RegionSettings {
     pub base_plots: HashMap<String, Location>,
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+#[require(Save)]
 pub struct Region {
     pub name: String,
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+#[require(Save)]
 pub struct BasePlot {
     pub name: String,
 }

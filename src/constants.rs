@@ -1,6 +1,16 @@
+use std::time::Duration;
+
 use crate::funds::FundsAmount;
 
 pub const STARTING_FUNDS: FundsAmount = 5000;
+
+pub const AUTOSAVE_INTERVAL: Duration = Duration::from_mins(5);
+
+pub mod files {
+    pub const PROJECT_DIR_QUALIFIER: &str = "";
+    pub const PROJECT_DIR_ORGANIZATION: &str = "amtep";
+    pub const PROJECT_DIR_APPLICATION: &str = "Apocalyptosis";
+}
 
 pub mod ui {
     use bevy::color::Srgba;
