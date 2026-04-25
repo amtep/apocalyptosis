@@ -15,9 +15,9 @@ pub fn main_loop() {
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         mode: WindowMode::BorderlessFullscreen(MonitorSelection::Current),
-                        ..Default::default()
+                        ..default()
                     }),
-                    ..Default::default()
+                    ..default()
                 }),
             TooltipPlugin::default(),
             crate::state::plugin,

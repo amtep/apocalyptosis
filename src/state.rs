@@ -50,7 +50,7 @@ fn load_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         Node {
             width: percent(100.0),
             height: percent(100.0),
-            ..Default::default()
+            ..default()
         },
         BackgroundColor::from(BLACK),
     ));

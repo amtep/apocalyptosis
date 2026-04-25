@@ -241,7 +241,7 @@ fn setup_map(
                     parent.spawn((
                         Node {
                             min_width: px(50),
-                            ..Default::default()
+                            ..default()
                         },
                         text_font.clone(),
                         TextLayout::new_with_justify(Justify::Right),
@@ -255,7 +255,7 @@ fn setup_map(
                     parent.spawn((
                         Node {
                             min_width: px(50),
-                            ..Default::default()
+                            ..default()
                         },
                         text_font.clone(),
                         TextLayout::new_with_justify(Justify::Right),
@@ -277,8 +277,9 @@ fn setup_map(
                             GameSpeedAction::TogglePause,
                             Node {
                                 width: px(25),
-                                ..Default::default()
-                            }, // 23F8 DOUBLE VERTICAL BAR would be better but is not in the font.
+                                ..default()
+                            },
+                            // 23F8 DOUBLE VERTICAL BAR would be better but is not in the font.
                             // DOUBLE VERTICAL LINE
                             Text("\u{2016}".to_string()),
                             TextColor::from(TEXT),
@@ -292,8 +293,9 @@ fn setup_map(
                             GameSpeedAction::SetSpeed(GameSpeed::Normal),
                             Node {
                                 width: px(25),
-                                ..Default::default()
-                            }, // RIGHTWARDS ARROW
+                                ..default()
+                            },
+                            // RIGHTWARDS ARROW
                             Text("\u{2192}".to_string()),
                             TextColor::from(TEXT_HIGHLIGHT),
                             unicode_text_font.clone(),
@@ -306,8 +308,9 @@ fn setup_map(
                             GameSpeedAction::SetSpeed(GameSpeed::Fast),
                             Node {
                                 width: px(25),
-                                ..Default::default()
-                            }, // RIGHTWARDS PAIRED ARROWS
+                                ..default()
+                            },
+                            // RIGHTWARDS PAIRED ARROWS
                             Text("\u{21C9}".to_string()),
                             TextColor::from(TEXT),
                             unicode_text_font.clone(),
@@ -320,8 +323,9 @@ fn setup_map(
                             GameSpeedAction::SetSpeed(GameSpeed::Faster),
                             Node {
                                 width: px(25),
-                                ..Default::default()
-                            }, // THREE RIGHTWARDS ARROWS
+                                ..default()
+                            },
+                            // THREE RIGHTWARDS ARROWS
                             Text("\u{21F6}".to_string()),
                             TextColor::from(TEXT),
                             unicode_text_font.clone(),
@@ -382,7 +386,7 @@ fn setup_regions(
                 },
                 UiTransform {
                     translation: Val2::percent(-50.0, -50.0),
-                    ..Default::default()
+                    ..default()
                 },
                 RegionUi,
                 BorderColor::all(BORDER),
@@ -406,7 +410,7 @@ fn setup_regions(
                         justify_content: JustifyContent::Center,
                         column_gap: px(10),
                         display: Display::None,
-                        ..Default::default()
+                        ..default()
                     },
                     children![
                         (
@@ -450,11 +454,11 @@ fn setup_regions(
                     left: percent(location.x),
                     top: percent(location.y),
                     position_type: PositionType::Absolute,
-                    ..Default::default()
+                    ..default()
                 },
                 UiTransform {
                     translation: Val2::percent(-50.0, -50.0),
-                    ..Default::default()
+                    ..default()
                 },
             ));
         }
@@ -544,7 +548,7 @@ fn on_spawn_base(
                 Node {
                     flex_direction: FlexDirection::Row,
                     justify_content: JustifyContent::Center,
-                    ..Default::default()
+                    ..default()
                 },
             ));
         });
@@ -588,7 +592,7 @@ fn on_changed_follower<E: EntityEvent>(
     let text_font = TextFont {
         font_size: 12.0,
         font: unicode_font_handle.0.clone(),
-        ..Default::default()
+        ..default()
     };
 
     let bundles: Vec<_> = followers
