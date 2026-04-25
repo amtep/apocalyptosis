@@ -3,14 +3,14 @@ use bevy::prelude::*;
 use crate::{
     constants::ui::{FONT_DISPLAY_PATH, FONT_PATH, MENU_BACKGROUND, TEXTURE_EARTH_BACKGROUND},
     state::GameState,
-    text::{FluentBundleWrapper, TextKey},
+    text::TextKey,
 };
 
 pub fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::MainMenu), setup);
 }
 
-fn setup(mut commands: Commands, bundle: Res<FluentBundleWrapper>, asset_server: Res<AssetServer>) {
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let button = |key| {
         (
             Button,
@@ -33,7 +33,7 @@ fn setup(mut commands: Commands, bundle: Res<FluentBundleWrapper>, asset_server:
                     font_size: 60.0,
                     ..default()
                 },
-                TextKey::new(key, &bundle),
+                TextKey::new(key),
             )],
         )
     };
@@ -66,7 +66,7 @@ fn setup(mut commands: Commands, bundle: Res<FluentBundleWrapper>, asset_server:
                     ..default()
                 },
                 children![(
-                    TextKey::new("main-menu-title", &bundle),
+                    TextKey::new("main-menu-title"),
                     TextFont {
                         font: asset_server.load(FONT_DISPLAY_PATH),
                         font_size: 140.0,

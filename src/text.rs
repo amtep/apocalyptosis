@@ -1,58 +1,108 @@
 use std::string::FromUtf8Error;
 use std::sync::Arc;
 
-use bevy::asset::RecursiveDependencyLoadState;
-use bevy::asset::{AssetLoader, LoadContext, LoadedFolder, io::Reader};
-use bevy::prelude::*;
-use fluent::{FluentArgs, FluentResource, concurrent::FluentBundle};
-use fluent_datetime::BundleExt;
+use bevy::{
+    asset::{AssetLoader, LoadContext, LoadedFolder, RecursiveDependencyLoadState, io::Reader},
+    platform::cell::SyncCell,
+    prelude::*,
+};
+use chrono::{Datelike, NaiveDate};
+use fluent::{FluentArgs, FluentResource, FluentValue, concurrent::FluentBundle};
+use fluent_datetime::{BundleExt, FluentDateTime, length};
+use icu::{
+    calendar::{Date, Iso},
+    time::{DateTime, Time},
+};
 use line_numbers::LinePositions;
 use thiserror::Error;
 use unic_langid::langid;
 
+use crate::funds::FundsAmount;
 use crate::state::GameState;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Load), setup)
-        .add_systems(Update, update.run_if(in_state(GameState::Load)))
+        .add_systems(
+            Update,
+            (
+                update.run_if(in_state(GameState::Load)),
+                recalc_changed_texts,
+            ),
+        )
         .add_systems(OnExit(GameState::Load), cleanup)
-        .add_systems(FixedUpdate, reload.run_if(not(in_state(GameState::Load))))
+        .add_systems(
+            FixedUpdate,
+            (
+                reload.run_if(not(in_state(GameState::Load))),
+                recalc_all_texts
+                    .run_if(resource_changed::<FluentBundleWrapper>)
+                    .after(reload),
+            ),
+        )
         .init_asset::<FluentResourceAsset>()
         .register_asset_loader(FluentResourceAssetLoader);
 }
 
-/// Add this component to entities that have a Text node that
-/// should be derived from this message key.
-/// Only works for messages that require no arguments.
+/// This type exists because `FluentValue` is not [`Sync`] and therefore
+/// can't be used in a [`Component`].
+pub enum TextArgValue {
+    /// This uses f64 because that's what FluentValue uses.
+    /// It's unfortunate, because we use i64 internally.
+    Number(f64),
+    Datetime(DateTime<Iso>),
+}
+
+trait IntoFluentValue {
+    fn fluent(&self) -> FluentValue<'static>;
+}
+
+impl IntoFluentValue for FundsAmount {
+    fn fluent(&self) -> FluentValue<'static> {
+        self.into()
+    }
+}
+
+impl IntoFluentValue for NaiveDate {
+    fn fluent(&self) -> FluentValue<'static> {
+        let mut d: FluentDateTime = if let Ok(date) =
+            Date::try_new_iso(self.year(), self.month() as u8, self.day() as u8)
+        {
+            DateTime {
+                date,
+                time: Time::start_of_day(),
+            }
+        } else {
+            warn!("Invalid date: {self}");
+            DateTime {
+                date: Date::try_new_iso(2000, 1, 1).unwrap(),
+                time: Time::start_of_day(),
+            }
+        }
+        .into();
+        d.options.set_date_style(Some(length::Date::Long));
+        d.into()
+    }
+}
+
+/// This component represents localized UI text.
+/// It is the source of truth for the accompanying `Text` component.
 #[derive(Component)]
 #[require(Text)]
-pub struct TextKey(String);
+pub struct TextKey(pub String, pub Option<SyncCell<FluentArgs<'static>>>);
 
 impl TextKey {
-    pub fn new<S: Into<String>>(key: S, bundle: &FluentBundleWrapper) -> (Self, Text) {
-        let text_key = Self(key.into());
-        let text = Text::new(bundle.get(&text_key.0, None));
-        (text_key, text)
+    pub fn new(key: impl Into<String>) -> Self {
+        Self(key.into(), None)
     }
 
-    pub fn new_no_args<S: Into<String>>(key: S) -> (Self, Text) {
-        let text_key = Self(key.into());
-        let text = Text::default();
-        (text_key, text)
-    }
-
-    fn new_args<S: Into<String>>(
-        key: S,
-        bundle: &FluentBundleWrapper,
-        args: &FluentArgs<'_>,
-    ) -> (Self, Text) {
-        let text_key = Self(key.into());
-        let text = Text::new(bundle.get(&text_key.0, Some(args)));
-        (text_key, text)
-    }
-
-    pub fn get(&self, bundle: &FluentBundleWrapper, args: &FluentArgs<'_>) -> String {
-        bundle.get(&self.0, Some(args))
+    pub fn with_arg(
+        key: impl Into<String>,
+        arg: &'static str,
+        value: impl IntoFluentValue,
+    ) -> Self {
+        let args = FluentArgs::with_capacity(1);
+        args.set(arg, value.fluent());
+        Self(key.into(), Some(SyncCell::new(args)))
     }
 }
 
@@ -109,10 +159,12 @@ impl AssetLoader for FluentResourceAssetLoader {
 struct FluentResourceAsset(Arc<FluentResource>);
 
 #[derive(Resource)]
-pub struct FluentBundleWrapper(FluentBundle<Arc<FluentResource>>, bool);
+struct FluentBundleWrapper(FluentBundle<Arc<FluentResource>>, bool);
 
 impl FluentBundleWrapper {
-    pub fn get(&self, key: &str, args: Option<&FluentArgs<'_>>) -> String {
+    pub fn get(&self, key: &str, args: &mut Option<SyncCell<FluentArgs>>) -> String {
+        let args = args.as_mut().map(|f| &*f.get());
+
         let Some(msg) = self.0.get_message(key) else {
             error!("no message with key {key} exists");
             return String::new();
@@ -220,5 +272,21 @@ fn reload(
         bundle.0 = new_bundle;
         reader.clear();
         commands.trigger(LocalesReloadedEvent);
+    }
+}
+
+fn recalc_all_texts(bundle: Res<FluentBundleWrapper>, mut q: Query<(&mut Text, &mut TextKey)>) {
+    for (mut text, mut textkey) in &mut q {
+        let (key, args) = (&textkey.0, textkey.1.clone());
+        text.set_if_neq(Text(bundle.get(key, &mut args)));
+    }
+}
+
+fn recalc_changed_texts(
+    bundle: Res<FluentBundleWrapper>,
+    mut q: Query<(&mut Text, &TextKey), Changed<TextKey>>,
+) {
+    for (mut text, TextKey(key, args)) in &mut q {
+        text.set_if_neq(Text(bundle.get(key, args)));
     }
 }
