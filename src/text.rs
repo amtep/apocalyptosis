@@ -4,6 +4,7 @@ use std::sync::Arc;
 use bevy::{
     asset::{AssetLoader, LoadContext, LoadedFolder, RecursiveDependencyLoadState, io::Reader},
     prelude::*,
+    ui::UiSystems,
 };
 use chrono::{Datelike, NaiveDate};
 use fluent::{FluentResource, FluentValue, concurrent::FluentBundle};
@@ -17,19 +18,11 @@ use thiserror::Error;
 use unic_langid::langid;
 
 use crate::funds::FundsAmount;
-use crate::state::{GameState, UpdateSet};
+use crate::state::GameState;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Load), setup)
-        .add_systems(
-            Update,
-            (
-                update.run_if(in_state(GameState::Load)),
-                recalc_changed_texts
-                    .run_if(not(in_state(GameState::Load)))
-                    .in_set(UpdateSet::UiCleanup),
-            ),
-        )
+        .add_systems(Update, update.run_if(in_state(GameState::Load)))
         .add_systems(OnExit(GameState::Load), cleanup)
         .add_systems(
             FixedUpdate,
@@ -39,6 +32,12 @@ pub fn plugin(app: &mut App) {
                     .run_if(resource_changed::<FluentBundleWrapper>)
                     .after(reload),
             ),
+        )
+        .add_systems(
+            PostUpdate,
+            recalc_changed_texts
+                .run_if(not(in_state(GameState::Load)))
+                .before(UiSystems::Prepare),
         )
         .init_asset::<FluentResourceAsset>()
         .register_asset_loader(FluentResourceAssetLoader);

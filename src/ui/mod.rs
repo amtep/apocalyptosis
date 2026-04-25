@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bevy::{input_focus::InputFocus, prelude::*, window::WindowResized};
+use bevy::{input_focus::InputFocus, prelude::*, ui::UiSystems, window::WindowResized};
 use pyri_tooltip::{
     Tooltip, TooltipActivation, TooltipContent, TooltipDismissal, TooltipPlacement, TooltipTransfer,
 };
@@ -12,7 +12,7 @@ use crate::{
     followers::Follower,
     funds::{Expense, ExpenseCategory, Funds, FundsAmount, Income, IncomeCategory},
     regions::{BasePlot, Location, Region},
-    state::{GameState, MainSetupSet, UpdateSet},
+    state::{GameState, MainSetupSet},
     suspicion::{IntelligenceSuspicion, MediaSuspicion, PoliceSuspicion, ScientificSuspicion},
     text::TextKey,
     time::{CurrentGameSpeed, GameDate, GameSpeed, GameSpeedAction, GameSpeedChangedEvent},
@@ -33,27 +33,22 @@ pub fn plugin(app: &mut App) {
         )
         .add_systems(
             Update,
-            update_regional_suspicion
-                .run_if(in_state(GameState::Main))
-                .in_set(UpdateSet::Ui),
+            update_regional_suspicion.run_if(in_state(GameState::Main)),
         )
         .add_systems(
             Update,
             update_game_date
-                .run_if(resource_exists_and_changed::<GameDate>.and(in_state(GameState::Main)))
-                .in_set(UpdateSet::Ui),
+                .run_if(resource_exists_and_changed::<GameDate>.and(in_state(GameState::Main))),
         )
         .add_systems(
             Update,
             funds_changed
-                .run_if(resource_exists_and_changed::<Funds>.and(in_state(GameState::Main)))
-                .in_set(UpdateSet::Ui),
+                .run_if(resource_exists_and_changed::<Funds>.and(in_state(GameState::Main))),
         )
         .add_systems(
             Update,
             update_funds_tooltip
-                .run_if(resource_exists_and_changed::<Funds>.and(in_state(GameState::Main)))
-                .in_set(UpdateSet::Ui),
+                .run_if(resource_exists_and_changed::<Funds>.and(in_state(GameState::Main))),
         )
         .add_systems(
             Update,
@@ -65,17 +60,15 @@ pub fn plugin(app: &mut App) {
         )
         .add_systems(
             Update,
-            update_game_speed_state
-                .run_if(
-                    resource_exists_and_changed::<CurrentGameSpeed>.and(in_state(GameState::Main)),
-                )
-                .in_set(UpdateSet::Ui),
+            update_game_speed_state.run_if(
+                resource_exists_and_changed::<CurrentGameSpeed>.and(in_state(GameState::Main)),
+            ),
         )
         .add_systems(
-            Update,
+            PostUpdate,
             update_meter_display::<u32>
                 .run_if(in_state(GameState::Main))
-                .in_set(UpdateSet::UiCleanup),
+                .before(UiSystems::Prepare),
         );
 }
 
