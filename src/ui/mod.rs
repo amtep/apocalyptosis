@@ -42,12 +42,7 @@ pub fn plugin(app: &mut App) {
         )
         .add_systems(
             Update,
-            funds_changed
-                .run_if(resource_exists_and_changed::<Funds>.and(in_state(GameState::Main))),
-        )
-        .add_systems(
-            Update,
-            update_funds_tooltip
+            (update_funds_tooltip, update_funds)
                 .run_if(resource_exists_and_changed::<Funds>.and(in_state(GameState::Main))),
         )
         .add_systems(
@@ -217,7 +212,7 @@ fn setup_map(
                         },
                         text_font.clone(),
                         // will be updated by funds_changed
-                        TextKey::with_arg("funds-display", "funds", 0),
+                        TextKey::new("funds-display").add_arg("funds", 0),
                         FundsUi,
                         Tooltip {
                             content: TooltipContent::Custom(tooltip_content),
@@ -239,7 +234,7 @@ fn setup_map(
                         },
                         text_font.clone(),
                         // will be updated by update_game_date
-                        TextKey::with_arg("game-date-display", "date", game_date.0),
+                        TextKey::new("game-date-display").add_arg("date", game_date.0),
                         GameDateUi,
                     ));
                     // Suspicion meters
@@ -354,11 +349,11 @@ fn update_game_date(
     game_date: Res<GameDate>,
     mut text_key: Single<&mut TextKey, With<GameDateUi>>,
 ) {
-    text_key.1[0].1 = game_date.0.into();
+    text_key.replace_arg("date", game_date.0);
 }
 
-fn funds_changed(funds: Res<Funds>, mut text_key: Single<&mut TextKey, With<FundsUi>>) {
-    text_key.1[0].1 = funds.0.into();
+fn update_funds(funds: Res<Funds>, mut text_key: Single<&mut TextKey, With<FundsUi>>) {
+    text_key.replace_arg("funds", funds.0);
 }
 
 fn setup_regions(
@@ -767,7 +762,7 @@ fn update_funds_tooltip(
                     ..default()
                 });
                 parent.spawn((
-                    TextKey::with_arg("funds", "funds", funds),
+                    TextKey::new("funds").add_arg("funds", funds),
                     text_font.clone(),
                 ));
             });

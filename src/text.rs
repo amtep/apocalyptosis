@@ -106,12 +106,19 @@ impl TextKey {
         Self(key.into(), Vec::new())
     }
 
-    pub fn with_arg(
-        key: impl Into<String>,
-        arg: &'static str,
-        value: impl Into<TextArgValue>,
-    ) -> Self {
-        Self(key.into(), vec![(arg, value.into())])
+    pub fn add_arg(mut self, arg: &'static str, value: impl Into<TextArgValue>) -> Self {
+        self.1.push((arg, value.into()));
+        self
+    }
+
+    pub fn replace_arg(&mut self, arg: &'static str, value: impl Into<TextArgValue>) -> &mut Self {
+        for (a, v) in self.1.iter_mut() {
+            if *a == arg {
+                *v = value.into();
+                break;
+            }
+        }
+        self
     }
 }
 
@@ -202,9 +209,6 @@ impl FluentBundleWrapper {
 #[derive(Resource)]
 struct FluentFolder(Handle<LoadedFolder>);
 
-#[derive(Event)]
-struct LocalesReloadedEvent;
-
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(FluentBundleWrapper(
         FluentBundle::new_concurrent(vec![langid!("en-US")]),
@@ -269,7 +273,6 @@ fn cleanup(mut messages: ResMut<Messages<AssetEvent<FluentResourceAsset>>>) {
 }
 
 fn reload(
-    mut commands: Commands,
     mut reader: MessageReader<AssetEvent<FluentResourceAsset>>,
     fluent_resource_assets: Res<Assets<FluentResourceAsset>>,
     mut bundle: ResMut<FluentBundleWrapper>,
@@ -284,7 +287,6 @@ fn reload(
         };
         bundle.0 = new_bundle;
         reader.clear();
-        commands.trigger(LocalesReloadedEvent);
     }
 }
 
