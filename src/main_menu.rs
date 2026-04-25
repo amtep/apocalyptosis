@@ -2,13 +2,22 @@ use bevy::prelude::*;
 
 use crate::{
     constants::ui::{FONT_DISPLAY_PATH, FONT_PATH, MENU_BACKGROUND, TEXTURE_EARTH_BACKGROUND},
-    state::GameState,
+    state::{GameState, MainSetupSet},
     text::TextKey,
 };
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(OnEnter(GameState::MainMenu), setup);
+    app.add_systems(OnEnter(GameState::MainMenu), setup)
+        .add_systems(
+            OnEnter(GameState::Main),
+            remove_new_game
+                .run_if(resource_exists::<NewGame>)
+                .in_set(MainSetupSet::Late),
+        );
 }
+
+#[derive(Resource)]
+pub struct NewGame;
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let button = |key| {
@@ -85,8 +94,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 .with_children(|parent| {
                     parent.spawn(button("menu-button-new-game")).observe(
                         |click: On<Pointer<Click>>,
+                         mut commands: Commands,
                          mut game_state: ResMut<NextState<GameState>>| {
                             if click.button == PointerButton::Primary {
+                                commands.insert_resource(NewGame);
                                 game_state.set(GameState::Main);
                             }
                         },
@@ -100,4 +111,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                     );
                 });
         });
+}
+
+fn remove_new_game(mut commands: Commands) {
+    commands.remove_resource::<NewGame>();
 }

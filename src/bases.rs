@@ -7,6 +7,7 @@ use serde_derive::Deserialize;
 
 use crate::{
     funds::{Expense, ExpenseCategory, FundsAmount},
+    main_menu::NewGame,
     regions::BasePlot,
     rng::RandomSource,
     state::{GameState, MainSetupSet},
@@ -19,7 +20,9 @@ pub fn plugin(app: &mut App) {
         .add_systems(OnEnter(GameState::Load), setup_load)
         .add_systems(
             OnEnter(GameState::Main),
-            new_spawn_base.in_set(MainSetupSet::Bases),
+            new_game
+                .run_if(resource_exists::<NewGame>)
+                .in_set(MainSetupSet::Bases),
         );
 }
 
@@ -54,7 +57,7 @@ pub struct Basetype {
     pub settings: BasetypeSettings,
 }
 
-fn new_spawn_base(
+fn new_game(
     mut commands: Commands,
     base_types_handle: Res<BasetypesHandle>,
     base_types_asset: Res<Assets<BasetypesAsset>>,

@@ -8,6 +8,7 @@ use serde::Deserialize;
 use crate::{
     bases::Base,
     funds::{Expense, ExpenseCategory, FundsAmount},
+    main_menu::NewGame,
     rng::RandomSource,
     state::{GameState, MainSetupSet},
 };
@@ -19,7 +20,9 @@ pub fn plugin(app: &mut App) {
         .add_systems(OnEnter(GameState::Load), setup_load)
         .add_systems(
             OnEnter(GameState::Main),
-            new_spawn_follower.in_set(MainSetupSet::Followers),
+            new_game
+                .run_if(resource_exists::<NewGame>)
+                .in_set(MainSetupSet::Followers),
         );
 }
 
@@ -50,7 +53,7 @@ fn setup_load(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 /// Create the starting priest for the cult.
-fn new_spawn_follower(
+fn new_game(
     mut commands: Commands,
     bases: Query<Entity, With<Base>>,
     followers_handle: Res<FollowersHandle>,
