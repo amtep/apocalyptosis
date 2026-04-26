@@ -40,6 +40,8 @@ pub mod ui {
     pub const MENU_HOVER_BACKGROUND: Srgba = THEME_INDIGO;
     pub const MENU_PRESSED_BACKGROUND: Srgba = BLACK;
 
+    pub const DIALOG_BACKGROUND: Srgba = THEME_DARK_PURPLE;
+
     pub const TEXT: Srgba = WHITE;
     pub const BORDER: Srgba = WHITE;
     pub const TEXT_HIGHLIGHT: Srgba = YELLOW;
@@ -48,4 +50,10 @@ pub mod ui {
     pub const TEXT_MIXED: Srgba = ORANGE;
     pub const TEXT_NEGATIVE: Srgba = RED;
     pub const TEXT_NEUTRAL: Srgba = BLUE;
+
+    pub const HEADING: f32 = 24.0;
+    pub const SUB_HEADING: f32 = 20.0;
+    pub const LARGE: f32 = 16.0;
+    pub const NORMAL: f32 = 14.0;
+    pub const SMALL: f32 = 12.0;
 }

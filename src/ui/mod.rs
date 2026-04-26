@@ -20,6 +20,7 @@ use crate::{
 };
 
 mod buttons;
+mod dialog;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Load), setup_fonts)
@@ -165,7 +166,7 @@ fn setup_map(
                 padding: UiRect::all(px(3)),
                 ..default()
             },
-            BorderColor::all(YELLOW),
+            BorderColor::all(BORDER_HIGHLIGHT),
             BackgroundColor::from(MENU_BACKGROUND),
             Visibility::Hidden,
             ZIndex(1),

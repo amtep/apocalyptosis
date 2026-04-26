@@ -46,6 +46,7 @@ pub fn plugin(app: &mut App) {
 /// This type exists because `FluentValue` is not [`Sync`] and therefore
 /// can't be used in a [`Component`].
 /// There is the option of using `SyncCell` but I couldn't get that to work.
+#[derive(Debug)]
 pub enum TextArgValue {
     /// This uses f64 because that's what FluentValue uses.
     /// It's unfortunate, because we use i64 internally.
@@ -97,7 +98,7 @@ impl From<DateTime<Iso>> for TextArgValue {
 
 /// This component represents localized UI text.
 /// It is the source of truth for the accompanying `Text` component.
-#[derive(Component)]
+#[derive(Component, Debug)]
 #[require(Text)]
 pub struct TextKey(pub String, pub Vec<(&'static str, TextArgValue)>);
 
@@ -119,6 +120,12 @@ impl TextKey {
             }
         }
         self
+    }
+}
+
+impl From<&str> for TextKey {
+    fn from(value: &str) -> Self {
+        Self::new(value)
     }
 }
 
