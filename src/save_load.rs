@@ -21,6 +21,7 @@ use crate::{
     state::GameState,
     suspicion::{IntelligenceSuspicion, ScientificSuspicion},
     time::GameDate,
+    ui::{FontHandle, save_load::warn_no_save},
 };
 
 const SEPARATOR: &[u8] = b"\n\nAPOCALYPTOSIS\n";
@@ -49,6 +50,7 @@ struct Campaign(usize);
 #[derive(Resource, Deref, DerefMut)]
 struct AutosaveTimer(Timer);
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Error, Debug)]
 enum SaveError {
     #[error("could not locate user home for project folder")]
@@ -80,7 +82,7 @@ fn save_inner(mut commands: Commands, index: usize) -> Result<(), SaveError> {
         let metadata = SaveMetadata {
             save_timestamp: Utc::now(),
         };
-        file.write_all(&ron::to_string(&metadata).unwrap().as_bytes())
+        file.write_all(ron::to_string(&metadata).unwrap().as_bytes())
             .map_err(|e| SaveError::WriteSaveError(path.clone(), e))?;
         file.write_all(SEPARATOR)
             .map_err(|e| SaveError::WriteSaveError(path.clone(), e))?;
@@ -97,7 +99,7 @@ fn save_inner(mut commands: Commands, index: usize) -> Result<(), SaveError> {
     }
 }
 
-fn save(mut commands: Commands, campaign: Option<Res<Campaign>>) {
+fn save(mut commands: Commands, campaign: Option<Res<Campaign>>, font: Res<FontHandle>) {
     let index = if let Some(index) = campaign {
         **index
     } else {
@@ -111,14 +113,14 @@ fn save(mut commands: Commands, campaign: Option<Res<Campaign>>) {
                     "Save error! could not determine campaign index: {e} {:?}",
                     e.source()
                 );
-                // TODO: open a popup warning the user.
+                warn_no_save(commands.reborrow(), font);
                 return;
             }
         }
     };
     if let Err(e) = save_inner(commands.reborrow(), index) {
         error!("Save error! {e} {:?}", e.source());
-        // TODO: open a popup warning the user.
+        warn_no_save(commands.reborrow(), font);
     }
 }
 
@@ -127,9 +129,10 @@ fn autosave(
     time: Res<Time<Real>>,
     mut timer: ResMut<AutosaveTimer>,
     campaign: Option<Res<Campaign>>,
+    font: Res<FontHandle>,
 ) {
     if timer.tick(time.delta()).just_finished() {
-        save(commands.reborrow(), campaign);
+        save(commands.reborrow(), campaign, font);
     }
 }
 
@@ -137,9 +140,10 @@ fn listen_save_keys(
     mut commands: Commands,
     keys: Res<ButtonInput<KeyCode>>,
     campaign: Option<Res<Campaign>>,
+    font: Res<FontHandle>,
 ) {
     if keys.just_pressed(KeyCode::F5) {
-        save(commands.reborrow(), campaign);
+        save(commands.reborrow(), campaign, font);
     }
 }
 
@@ -162,7 +166,7 @@ fn calc_new_campaign_index() -> Result<usize, SaveError> {
                 .file_name()
                 .to_string_lossy()
                 .split(&['.', '-'])
-                .nth(0)
+                .next()
                 .map(|number| number.parse())
                 && index > max_campaign_index
             {

@@ -22,6 +22,7 @@ use crate::{
 mod buttons;
 mod dialog;
 mod main_menu;
+pub mod save_load;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Load), setup_fonts)
@@ -79,13 +80,13 @@ struct ViewOf(Entity);
 struct Views(Vec<Entity>);
 
 #[derive(Resource)]
-struct FontHandle(Handle<Font>);
+pub struct FontHandle(Handle<Font>);
 
 #[derive(Resource)]
-struct DisplayFontHandle(Handle<Font>);
+pub struct DisplayFontHandle(Handle<Font>);
 
 #[derive(Resource)]
-struct UnicodeFontHandle(Handle<Font>);
+pub struct UnicodeFontHandle(Handle<Font>);
 
 #[derive(Component)]
 struct MapUi;
