@@ -116,6 +116,40 @@ where
         }
     }
 
+    pub fn with_confirm_action<F>(self, action: F) -> DialogBuilder<F, F2>
+    where
+        F: for<'a> FnOnce(&'a mut Commands) + Send + Sync + 'static,
+    {
+        DialogBuilder {
+            font: self.font,
+            text_body_font: self.text_body_font,
+            pause: self.pause,
+            title: self.title,
+            body: self.body,
+            confirm_label: self.confirm_label,
+            confirm_action: Some(action),
+            cancel_label: self.cancel_label,
+            cancel_action: self.cancel_action,
+        }
+    }
+
+    pub fn with_cancel_action<F>(self, action: F) -> DialogBuilder<F1, F>
+    where
+        F: for<'a> FnOnce(&'a mut Commands) + Send + Sync + 'static,
+    {
+        DialogBuilder {
+            font: self.font,
+            text_body_font: self.text_body_font,
+            pause: self.pause,
+            title: self.title,
+            body: self.body,
+            confirm_label: self.confirm_label,
+            confirm_action: self.confirm_action,
+            cancel_label: self.cancel_label,
+            cancel_action: Some(action),
+        }
+    }
+
     pub fn build(mut self, commands: &mut Commands) {
         let mut entity_commands = commands.spawn((
             DialogRoot,
@@ -244,45 +278,5 @@ where
                     );
                 });
         });
-    }
-}
-
-impl<F1, F2> DialogBuilder<F1, F2>
-where
-    F1: for<'a> FnOnce(&'a mut Commands) + Send + Sync + 'static,
-    F2: for<'a> FnOnce(&'a mut Commands) + Send + Sync + 'static,
-{
-    pub fn with_confirm_action<F>(self, action: F) -> DialogBuilder<F, F2>
-    where
-        F: for<'a> FnOnce(&'a mut Commands) + Send + Sync + 'static,
-    {
-        DialogBuilder {
-            font: self.font,
-            text_body_font: self.text_body_font,
-            pause: self.pause,
-            title: self.title,
-            body: self.body,
-            confirm_label: self.confirm_label,
-            confirm_action: Some(action),
-            cancel_label: self.cancel_label,
-            cancel_action: self.cancel_action,
-        }
-    }
-
-    pub fn with_cancel_action<F>(self, action: F) -> DialogBuilder<F1, F>
-    where
-        F: for<'a> FnOnce(&'a mut Commands) + Send + Sync + 'static,
-    {
-        DialogBuilder {
-            font: self.font,
-            text_body_font: self.text_body_font,
-            pause: self.pause,
-            title: self.title,
-            body: self.body,
-            confirm_label: self.confirm_label,
-            confirm_action: self.confirm_action,
-            cancel_label: self.cancel_label,
-            cancel_action: Some(action),
-        }
     }
 }

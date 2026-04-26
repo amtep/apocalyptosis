@@ -16,11 +16,12 @@ use crate::{
     suspicion::{IntelligenceSuspicion, MediaSuspicion, PoliceSuspicion, ScientificSuspicion},
     text::TextKey,
     time::{CurrentGameSpeed, GameDate, GameSpeed, GameSpeedAction, GameSpeedChangedEvent},
-    ui::buttons::setup_observe_buttons,
+    ui::{buttons::setup_observe_buttons, main_menu::setup_main_menu},
 };
 
 mod buttons;
 mod dialog;
+mod main_menu;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Load), setup_fonts)
@@ -28,6 +29,7 @@ pub fn plugin(app: &mut App) {
         .init_resource::<InputFocus>()
         .add_systems(OnExit(GameState::Load), setup_observe_buttons)
         .add_systems(Update, read_window_resized_messages)
+        .add_systems(OnEnter(GameState::MainMenu), setup_main_menu)
         .add_systems(
             OnEnter(GameState::Main),
             (setup_map, setup_regions).chain().in_set(MainSetupSet::Ui),
@@ -173,14 +175,9 @@ fn setup_map(
         ))
         .id();
 
-    let text_font = TextFont {
-        font: font_handle.0.clone(),
-        ..default()
-    };
-    let unicode_text_font = TextFont {
-        font: unicode_font_handle.0.clone(),
-        ..default()
-    };
+    let text_font = TextFont::from_font_size(SUB_HEADING).with_font(font_handle.0.clone());
+    let unicode_text_font =
+        TextFont::from_font_size(SUB_HEADING).with_font(unicode_font_handle.0.clone());
 
     commands
         .spawn(Node {
@@ -398,10 +395,7 @@ fn setup_regions(
             .with_children(|parent| {
                 parent.spawn((
                     TextKey::new(format!("region-{}", region.name)),
-                    TextFont {
-                        font: display_font_handle.0.clone(),
-                        ..default()
-                    },
+                    TextFont::from_font_size(HEADING).with_font(display_font_handle.0.clone()),
                 ));
                 parent.spawn((
                     ViewOf(entity),
@@ -415,11 +409,7 @@ fn setup_regions(
                     },
                     children![
                         (
-                            TextFont {
-                                font_size: 12.0,
-                                font: font_handle.0.clone(),
-                                ..default()
-                            },
+                            TextFont::from_font_size(SMALL).with_font(font_handle.0.clone()),
                             MeterDisplay::<u32> {
                                 value: 0,
                                 low_threshold: 34,
@@ -429,11 +419,7 @@ fn setup_regions(
                             ViewOf(entity),
                         ),
                         (
-                            TextFont {
-                                font_size: 12.0,
-                                font: font_handle.0.clone(),
-                                ..default()
-                            },
+                            TextFont::from_font_size(SMALL).with_font(font_handle.0.clone()),
                             MeterDisplay::<u32> {
                                 value: 0,
                                 low_threshold: 34,
@@ -590,11 +576,7 @@ fn on_changed_follower<E: EntityEvent>(
 
     followers.sort_unstable();
 
-    let text_font = TextFont {
-        font_size: 12.0,
-        font: unicode_font_handle.0.clone(),
-        ..default()
-    };
+    let text_font = TextFont::from_font_size(SMALL).with_font(unicode_font_handle.0.clone());
 
     let bundles: Vec<_> = followers
         .iter()
@@ -777,11 +759,7 @@ fn update_funds_tooltip(
     commands.entity(tooltip).despawn_children();
 
     // Completely refresh the tooltip contents
-    let text_font = TextFont {
-        font_size: 14.0,
-        font: font_handle.0.clone(),
-        ..default()
-    };
+    let text_font = TextFont::from_font_size(NORMAL).with_font(font_handle.0.clone());
     let hrule = (
         Node {
             min_width: percent(80),
