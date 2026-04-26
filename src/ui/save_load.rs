@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 
 use crate::{
-    constants::ui::BORDER, save_load::scan_saved_games, text::TextKey, ui::dialog::DialogBuilder,
+    constants::ui::{BORDER, NORMAL},
+    save_load::scan_saved_games,
+    text::TextKey,
+    ui::dialog::DialogBuilder,
 };
 
 pub fn warn_no_save(mut commands: Commands, font: Handle<Font>) {
@@ -52,6 +55,7 @@ pub fn open_load_game_popup(mut commands: Commands, font: Handle<Font>) {
             ..default()
         })
         .id();
+    let text_font = TextFont::from_font_size(NORMAL).with_font(font.clone());
     for (campaign, metadata, content) in v {
         commands
             .spawn((
@@ -63,12 +67,15 @@ pub fn open_load_game_popup(mut commands: Commands, font: Handle<Font>) {
                 BorderColor::all(BORDER),
                 ChildOf(body),
             ))
-            .with_child(Text(format!("{}", *campaign)))
+            .with_child((Text(format!("{}", *campaign)), text_font.clone()))
             .with_child(Node {
                 flex_grow: 1.0,
                 ..default()
             })
-            .with_child(TextKey::new("saved-game-date").add_arg("date", metadata.save_timestamp));
+            .with_child((
+                TextKey::new("saved-game-date").add_arg("date", metadata.save_timestamp),
+                text_font.clone(),
+            ));
     }
     DialogBuilder::new(font)
         .with_title("load-game-title")
