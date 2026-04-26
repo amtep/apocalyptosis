@@ -189,6 +189,7 @@ dependencies = [
  "pyri_tooltip",
  "rand 0.10.1",
  "rand_distr 0.6.0",
+ "ron",
  "serde",
  "serde_derive",
  "strum",

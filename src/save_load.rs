@@ -1,11 +1,15 @@
 use std::{
-    fs::{create_dir_all, read_dir},
+    error::Error,
+    fs::{File, create_dir_all, read_dir},
+    io::Write,
     path::PathBuf,
 };
 
 use bevy::prelude::*;
+use chrono::{DateTime, Utc};
 use directories::ProjectDirs;
 use moonshine_save::save::{SaveWorld, TriggerSave, save_on_default_event};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
@@ -19,6 +23,8 @@ use crate::{
     time::GameDate,
 };
 
+const SEPARATOR: &[u8] = b"\n\nAPOCALYPTOSIS\n";
+
 pub fn plugin(app: &mut App) {
     app.add_systems(
         Update,
@@ -31,9 +37,14 @@ pub fn plugin(app: &mut App) {
     .add_observer(save_on_default_event);
 }
 
+#[derive(Serialize, Deserialize)]
+struct SaveMetadata {
+    save_timestamp: DateTime<Utc>,
+}
+
 #[derive(Resource, Deref, Reflect)]
 #[reflect(Resource)]
-pub struct Campaign(pub usize);
+struct Campaign(usize);
 
 #[derive(Resource, Deref, DerefMut)]
 struct AutosaveTimer(Timer);
@@ -48,6 +59,42 @@ enum SaveError {
     ReadDirError(PathBuf, std::io::Error),
     #[error("could not read savegame folder {0}")]
     ReadEntryError(PathBuf, std::io::Error),
+    #[error("could not create save file {0}")]
+    CreateSaveError(PathBuf, std::io::Error),
+    #[error("could not write save file {0}")]
+    WriteSaveError(PathBuf, std::io::Error),
+}
+
+fn save_inner(mut commands: Commands, index: usize) -> Result<(), SaveError> {
+    if let Some(pd) = ProjectDirs::from(
+        PROJECT_DIR_QUALIFIER,
+        PROJECT_DIR_ORGANIZATION,
+        PROJECT_DIR_APPLICATION,
+    ) {
+        let path = pd
+            .data_dir()
+            .join(format!("saves/{index}.apocalyptosis.save"));
+        info!("Saving to {}", path.display());
+        let mut file =
+            File::create(&path).map_err(|e| SaveError::CreateSaveError(path.clone(), e))?;
+        let metadata = SaveMetadata {
+            save_timestamp: Utc::now(),
+        };
+        file.write_all(&ron::to_string(&metadata).unwrap().as_bytes())
+            .map_err(|e| SaveError::WriteSaveError(path.clone(), e))?;
+        file.write_all(SEPARATOR)
+            .map_err(|e| SaveError::WriteSaveError(path.clone(), e))?;
+        let event = SaveWorld::default_into_stream(file)
+            .include_resource::<Campaign>()
+            .include_resource::<Funds>()
+            .include_resource::<IntelligenceSuspicion>()
+            .include_resource::<ScientificSuspicion>()
+            .include_resource::<GameDate>();
+        commands.trigger_save(event);
+        Ok(())
+    } else {
+        Err(SaveError::ProjectDirFailed)
+    }
 }
 
 fn save(mut commands: Commands, campaign: Option<Res<Campaign>>) {
@@ -60,30 +107,18 @@ fn save(mut commands: Commands, campaign: Option<Res<Campaign>>) {
                 index
             }
             Err(e) => {
-                error!("could not determine campaign index: {e} {e:?}");
+                error!(
+                    "Save error! could not determine campaign index: {e} {:?}",
+                    e.source()
+                );
                 // TODO: open a popup warning the user.
                 return;
             }
         }
     };
-    if let Some(pd) = ProjectDirs::from(
-        PROJECT_DIR_QUALIFIER,
-        PROJECT_DIR_ORGANIZATION,
-        PROJECT_DIR_APPLICATION,
-    ) {
-        let path = pd.data_dir().join(format!("saves/{index}.ap.save"));
-        info!("Saving to {}", path.display());
-        let event = SaveWorld::default_into_file(path)
-            .include_resource::<Campaign>()
-            .include_resource::<Funds>()
-            .include_resource::<IntelligenceSuspicion>()
-            .include_resource::<ScientificSuspicion>()
-            .include_resource::<GameDate>();
-        commands.trigger_save(event);
-    } else {
-        error!("{}", SaveError::ProjectDirFailed);
+    if let Err(e) = save_inner(commands.reborrow(), index) {
+        error!("Save error! {e} {:?}", e.source());
         // TODO: open a popup warning the user.
-        return;
     }
 }
 
@@ -108,6 +143,7 @@ fn listen_save_keys(
     }
 }
 
+/// Examine the savefile filenames to find a new number to save under.
 fn calc_new_campaign_index() -> Result<usize, SaveError> {
     if let Some(pd) = ProjectDirs::from(
         PROJECT_DIR_QUALIFIER,

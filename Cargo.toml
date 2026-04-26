@@ -9,7 +9,7 @@ dev = ["bevy/dev"]
 
 [dependencies]
 bevy_common_assets = { version = "0.16.0", features = ["toml"] }
-chrono = { version = "0.4.44", default-features = false, features = ["std", "serde"] }
+chrono = { version = "0.4.44", default-features = false, features = ["std", "serde", "now"] }
 directories = "6.0.0"
 fluent = "0.17.0"
 fluent-datetime = "0.2.0"
@@ -20,6 +20,7 @@ moonshine-save = "0.6.1"
 pyri_tooltip = "0.6.0"
 rand = "0.10.1"
 rand_distr = "0.6.0"
+ron = "0.12.1"
 serde = "1.0.228"
 serde_derive = "1.0.228"
 strum = { version = "0.28.0", features = ["derive"] }
