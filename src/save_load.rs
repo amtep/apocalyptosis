@@ -1,5 +1,4 @@
 use std::{
-    error::Error,
     fs::{File, create_dir_all, read_dir},
     io::Write,
     path::PathBuf,
@@ -39,20 +38,19 @@ pub fn plugin(app: &mut App) {
 }
 
 #[derive(Serialize, Deserialize)]
-struct SaveMetadata {
-    save_timestamp: DateTime<Utc>,
+pub struct SaveMetadata {
+    pub save_timestamp: DateTime<Utc>,
 }
 
 #[derive(Resource, Deref, Reflect)]
 #[reflect(Resource)]
-struct Campaign(usize);
+pub struct Campaign(usize);
 
 #[derive(Resource, Deref, DerefMut)]
 struct AutosaveTimer(Timer);
 
-#[allow(clippy::enum_variant_names)]
 #[derive(Error, Debug)]
-enum SaveError {
+pub enum SaveLoadError {
     #[error("could not locate user home for project folder")]
     ProjectDirFailed,
     #[error("could not create savegame folder {0}: {1}")]
@@ -65,9 +63,11 @@ enum SaveError {
     CreateSaveError(PathBuf, std::io::Error),
     #[error("could not write save file {0}: {1}")]
     WriteSaveError(PathBuf, std::io::Error),
+    #[error("could not read save file {0}: {1}")]
+    ReadSaveError(PathBuf, std::io::Error),
 }
 
-fn save_inner(mut commands: Commands, index: usize) -> Result<(), SaveError> {
+fn save_inner(mut commands: Commands, index: usize) -> Result<(), SaveLoadError> {
     if let Some(pd) = ProjectDirs::from(
         PROJECT_DIR_QUALIFIER,
         PROJECT_DIR_ORGANIZATION,
@@ -78,14 +78,14 @@ fn save_inner(mut commands: Commands, index: usize) -> Result<(), SaveError> {
             .join(format!("saves/{index}.apocalyptosis.save"));
         info!("Saving to {}", path.display());
         let mut file =
-            File::create(&path).map_err(|e| SaveError::CreateSaveError(path.clone(), e))?;
+            File::create(&path).map_err(|e| SaveLoadError::CreateSaveError(path.clone(), e))?;
         let metadata = SaveMetadata {
             save_timestamp: Utc::now(),
         };
         file.write_all(ron::to_string(&metadata).unwrap().as_bytes())
-            .map_err(|e| SaveError::WriteSaveError(path.clone(), e))?;
+            .map_err(|e| SaveLoadError::WriteSaveError(path.clone(), e))?;
         file.write_all(SEPARATOR)
-            .map_err(|e| SaveError::WriteSaveError(path.clone(), e))?;
+            .map_err(|e| SaveLoadError::WriteSaveError(path.clone(), e))?;
         let event = SaveWorld::default_into_stream(file)
             .include_resource::<Campaign>()
             .include_resource::<Funds>()
@@ -95,7 +95,7 @@ fn save_inner(mut commands: Commands, index: usize) -> Result<(), SaveError> {
         commands.trigger_save(event);
         Ok(())
     } else {
-        Err(SaveError::ProjectDirFailed)
+        Err(SaveLoadError::ProjectDirFailed)
     }
 }
 
@@ -110,14 +110,14 @@ fn save(mut commands: Commands, campaign: Option<Res<Campaign>>, font: Res<FontH
             }
             Err(e) => {
                 error!("Save error! could not determine campaign index: {e}");
-                warn_no_save(commands.reborrow(), font);
+                warn_no_save(commands.reborrow(), font.0.clone());
                 return;
             }
         }
     };
     if let Err(e) = save_inner(commands.reborrow(), index) {
         error!("Save error! {e}");
-        warn_no_save(commands.reborrow(), font);
+        warn_no_save(commands.reborrow(), font.0.clone());
     }
 }
 
@@ -145,7 +145,7 @@ fn listen_save_keys(
 }
 
 /// Examine the savefile filenames to find a new number to save under.
-fn calc_new_campaign_index() -> Result<usize, SaveError> {
+fn calc_new_campaign_index() -> Result<usize, SaveLoadError> {
     if let Some(pd) = ProjectDirs::from(
         PROJECT_DIR_QUALIFIER,
         PROJECT_DIR_ORGANIZATION,
@@ -153,11 +153,12 @@ fn calc_new_campaign_index() -> Result<usize, SaveError> {
     ) {
         let mut max_campaign_index = 0;
         let save_dir = pd.data_dir().join("saves");
-        create_dir_all(&save_dir).map_err(|e| SaveError::CreateDirError(save_dir.to_owned(), e))?;
+        create_dir_all(&save_dir)
+            .map_err(|e| SaveLoadError::CreateDirError(save_dir.to_owned(), e))?;
         for entry in
-            read_dir(&save_dir).map_err(|e| SaveError::ReadDirError(save_dir.to_owned(), e))?
+            read_dir(&save_dir).map_err(|e| SaveLoadError::ReadDirError(save_dir.to_owned(), e))?
         {
-            let entry = entry.map_err(|e| SaveError::ReadEntryError(save_dir.to_owned(), e))?;
+            let entry = entry.map_err(|e| SaveLoadError::ReadEntryError(save_dir.to_owned(), e))?;
             // Parse the leading number in the filename
             if let Some(Ok(index)) = entry
                 .file_name()
@@ -172,6 +173,55 @@ fn calc_new_campaign_index() -> Result<usize, SaveError> {
         }
         Ok(max_campaign_index + 1)
     } else {
-        Err(SaveError::ProjectDirFailed)
+        Err(SaveLoadError::ProjectDirFailed)
+    }
+}
+
+pub fn scan_saved_games() -> Result<Vec<(Campaign, SaveMetadata, Vec<u8>)>, SaveLoadError> {
+    if let Some(pd) = ProjectDirs::from(
+        PROJECT_DIR_QUALIFIER,
+        PROJECT_DIR_ORGANIZATION,
+        PROJECT_DIR_APPLICATION,
+    ) {
+        let mut v = Vec::default();
+        let save_dir = pd.data_dir().join("saves");
+        create_dir_all(&save_dir)
+            .map_err(|e| SaveLoadError::CreateDirError(save_dir.to_owned(), e))?;
+        for entry in
+            read_dir(&save_dir).map_err(|e| SaveLoadError::ReadDirError(save_dir.to_owned(), e))?
+        {
+            let entry = entry.map_err(|e| SaveLoadError::ReadEntryError(save_dir.to_owned(), e))?;
+            // Parse the leading number in the filename
+            if let Some(Ok(index)) = entry
+                .file_name()
+                .to_string_lossy()
+                .split(&['.', '-'])
+                .next()
+                .map(|number| number.parse())
+            {
+                let Ok(bytes) = std::fs::read(entry.path()).map_err(|e| {
+                    let e = SaveLoadError::ReadSaveError(save_dir.to_owned(), e);
+                    error!("Skipping save file: {e}");
+                }) else {
+                    continue;
+                };
+                let Some(p) = bytes
+                    .windows(SEPARATOR.len())
+                    .position(|window| window == SEPARATOR)
+                else {
+                    error!("Savefile without metadata: {}", entry.path().display());
+                    continue;
+                };
+                let (metadata, content) = (&bytes[..p], &bytes[p + SEPARATOR.len()..]);
+                let Ok(metadata) = ron::de::from_bytes(metadata) else {
+                    error!("Savefile with invalid metadata: {}", entry.path().display());
+                    continue;
+                };
+                v.push((Campaign(index), metadata, content.to_owned()));
+            }
+        }
+        Ok(v)
+    } else {
+        Err(SaveLoadError::ProjectDirFailed)
     }
 }

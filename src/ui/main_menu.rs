@@ -5,7 +5,7 @@ use crate::{
     main_menu::NewGame,
     state::GameState,
     text::TextKey,
-    ui::{DisplayFontHandle, FontHandle},
+    ui::{DisplayFontHandle, FontHandle, save_load::open_load_game_popup},
 };
 
 pub fn setup_main_menu(
@@ -85,6 +85,15 @@ pub fn setup_main_menu(
                             if click.button == PointerButton::Primary {
                                 commands.insert_resource(NewGame);
                                 game_state.set(GameState::Main);
+                            }
+                        },
+                    );
+                    parent.spawn(button("menu-button-load-game")).observe(
+                        |click: On<Pointer<Click>>,
+                         mut commands: Commands,
+                         font: Res<FontHandle>| {
+                            if click.button == PointerButton::Primary {
+                                open_load_game_popup(commands.reborrow(), font.0.clone());
                             }
                         },
                     );

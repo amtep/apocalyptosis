@@ -6,12 +6,12 @@ use bevy::{
     prelude::*,
     ui::UiSystems,
 };
-use chrono::{Datelike, NaiveDate};
+use chrono::{Datelike, NaiveDate, Timelike, Utc};
 use fluent::{FluentResource, FluentValue, concurrent::FluentBundle};
 use fluent_datetime::{BundleExt, FluentDateTime, length};
 use icu::{
     calendar::{Date, Iso},
-    time::{DateTime, Time},
+    time::{DateTime, Hour, Minute, Nanosecond, Second, Time},
 };
 use line_numbers::LinePositions;
 use thiserror::Error;
@@ -79,6 +79,28 @@ impl From<NaiveDate> for TextArgValue {
             TextArgValue::Datetime(DateTime {
                 date,
                 time: Time::start_of_day(),
+            })
+        } else {
+            warn!("Invalid date: {value}");
+            TextArgValue::Datetime(DateTime {
+                date: Date::try_new_iso(2000, 1, 1).unwrap(),
+                time: Time::start_of_day(),
+            })
+        }
+    }
+}
+
+impl From<chrono::DateTime<Utc>> for TextArgValue {
+    fn from(value: chrono::DateTime<Utc>) -> Self {
+        if let Ok(date) = Date::try_new_iso(value.year(), value.month() as u8, value.day() as u8) {
+            TextArgValue::Datetime(DateTime {
+                date,
+                time: Time {
+                    hour: Hour::try_from(value.hour() as usize).unwrap(),
+                    minute: Minute::try_from(value.minute() as usize).unwrap(),
+                    second: Second::try_from(value.second() as usize).unwrap(),
+                    subsecond: Nanosecond::try_from(value.nanosecond() as usize).unwrap(),
+                },
             })
         } else {
             warn!("Invalid date: {value}");

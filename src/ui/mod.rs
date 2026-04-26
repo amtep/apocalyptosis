@@ -80,13 +80,13 @@ struct ViewOf(Entity);
 struct Views(Vec<Entity>);
 
 #[derive(Resource)]
-pub struct FontHandle(Handle<Font>);
+pub struct FontHandle(pub Handle<Font>);
 
 #[derive(Resource)]
-pub struct DisplayFontHandle(Handle<Font>);
+pub struct DisplayFontHandle(pub Handle<Font>);
 
 #[derive(Resource)]
-pub struct UnicodeFontHandle(Handle<Font>);
+pub struct UnicodeFontHandle(pub Handle<Font>);
 
 #[derive(Component)]
 struct MapUi;
