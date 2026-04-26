@@ -55,15 +55,15 @@ struct AutosaveTimer(Timer);
 enum SaveError {
     #[error("could not locate user home for project folder")]
     ProjectDirFailed,
-    #[error("could not create savegame folder {0}")]
+    #[error("could not create savegame folder {0}: {1}")]
     CreateDirError(PathBuf, std::io::Error),
-    #[error("could not open savegame folder {0}")]
+    #[error("could not open savegame folder {0}: {1}")]
     ReadDirError(PathBuf, std::io::Error),
-    #[error("could not read savegame folder {0}")]
+    #[error("could not read savegame folder {0}: {1}")]
     ReadEntryError(PathBuf, std::io::Error),
-    #[error("could not create save file {0}")]
+    #[error("could not create save file {0}: {1}")]
     CreateSaveError(PathBuf, std::io::Error),
-    #[error("could not write save file {0}")]
+    #[error("could not write save file {0}: {1}")]
     WriteSaveError(PathBuf, std::io::Error),
 }
 
@@ -109,17 +109,14 @@ fn save(mut commands: Commands, campaign: Option<Res<Campaign>>, font: Res<FontH
                 index
             }
             Err(e) => {
-                error!(
-                    "Save error! could not determine campaign index: {e} {:?}",
-                    e.source()
-                );
+                error!("Save error! could not determine campaign index: {e}");
                 warn_no_save(commands.reborrow(), font);
                 return;
             }
         }
     };
     if let Err(e) = save_inner(commands.reborrow(), index) {
-        error!("Save error! {e} {:?}", e.source());
+        error!("Save error! {e}");
         warn_no_save(commands.reborrow(), font);
     }
 }
