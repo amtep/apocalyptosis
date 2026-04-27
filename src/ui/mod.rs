@@ -24,7 +24,7 @@ use crate::{
 
 mod buttons;
 mod dialog;
-mod main_menu;
+pub mod main_menu;
 pub mod save_load;
 
 pub fn plugin(app: &mut App) {

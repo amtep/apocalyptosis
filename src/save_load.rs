@@ -5,22 +5,29 @@ use std::{
 };
 
 use bevy::prelude::*;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use directories::ProjectDirs;
 use moonshine_save::save::{SaveWorld, TriggerSave, save_on_default_event};
+use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
+    bases::Base,
     constants::{
         AUTOSAVE_INTERVAL,
         files::{PROJECT_DIR_APPLICATION, PROJECT_DIR_ORGANIZATION, PROJECT_DIR_QUALIFIER},
     },
-    funds::Funds,
+    followers::Follower,
+    funds::{Funds, FundsAmount},
     state::GameState,
     suspicion::{IntelligenceSuspicion, ScientificSuspicion},
     time::GameDate,
-    ui::{FontHandle, save_load::warn_no_save},
+    ui::{
+        FontHandle,
+        main_menu::{CultName, CultSymbol},
+        save_load::warn_no_save,
+    },
 };
 
 const SEPARATOR: &[u8] = b"\n\nAPOCALYPTOSIS\n";
@@ -40,6 +47,12 @@ pub fn plugin(app: &mut App) {
 #[derive(Serialize, Deserialize)]
 pub struct SaveMetadata {
     pub save_timestamp: DateTime<Utc>,
+    pub cult_name: String,
+    pub cult_symbol: char,
+    pub game_date: NaiveDate,
+    pub followers: usize,
+    pub bases: usize,
+    pub funds: FundsAmount,
 }
 
 #[derive(Resource, Deref)]
@@ -66,7 +79,11 @@ pub enum SaveLoadError {
     ReadSaveError(PathBuf, std::io::Error),
 }
 
-fn save_inner(mut commands: Commands, index: usize) -> Result<(), SaveLoadError> {
+fn save_inner(
+    mut commands: Commands,
+    index: usize,
+    metadata: SaveMetadata,
+) -> Result<(), SaveLoadError> {
     if let Some(pd) = ProjectDirs::from(
         PROJECT_DIR_QUALIFIER,
         PROJECT_DIR_ORGANIZATION,
@@ -78,11 +95,12 @@ fn save_inner(mut commands: Commands, index: usize) -> Result<(), SaveLoadError>
         info!("Saving to {}", path.display());
         let mut file =
             File::create(&path).map_err(|e| SaveLoadError::CreateSaveError(path.clone(), e))?;
-        let metadata = SaveMetadata {
-            save_timestamp: Utc::now(),
-        };
-        file.write_all(ron::to_string(&metadata).unwrap().as_bytes())
-            .map_err(|e| SaveLoadError::WriteSaveError(path.clone(), e))?;
+        file.write_all(
+            ron::ser::to_string_pretty(&metadata, PrettyConfig::default())
+                .unwrap()
+                .as_bytes(),
+        )
+        .map_err(|e| SaveLoadError::WriteSaveError(path.clone(), e))?;
         file.write_all(SEPARATOR)
             .map_err(|e| SaveLoadError::WriteSaveError(path.clone(), e))?;
         let event = SaveWorld::default_into_stream(file)
@@ -97,7 +115,17 @@ fn save_inner(mut commands: Commands, index: usize) -> Result<(), SaveLoadError>
     }
 }
 
-fn save(mut commands: Commands, campaign: Option<Res<Campaign>>, font: Res<FontHandle>) {
+fn save(
+    mut commands: Commands,
+    campaign: Option<Res<Campaign>>,
+    font: Res<FontHandle>,
+    cult_name: Res<CultName>,
+    cult_symbol: Res<CultSymbol>,
+    game_date: Res<GameDate>,
+    q_followers: Query<(), With<Follower>>,
+    q_bases: Query<(), With<Base>>,
+    funds: Res<Funds>,
+) {
     let index = if let Some(index) = campaign {
         **index
     } else {
@@ -113,7 +141,16 @@ fn save(mut commands: Commands, campaign: Option<Res<Campaign>>, font: Res<FontH
             }
         }
     };
-    if let Err(e) = save_inner(commands.reborrow(), index) {
+    let metadata = SaveMetadata {
+        save_timestamp: Utc::now(),
+        cult_name: cult_name.0.clone(),
+        cult_symbol: cult_symbol.0,
+        game_date: game_date.0,
+        followers: q_followers.count(),
+        bases: q_bases.count(),
+        funds: funds.0,
+    };
+    if let Err(e) = save_inner(commands.reborrow(), index, metadata) {
         error!("Save error! {e}");
         warn_no_save(commands.reborrow(), font.0.clone());
     }
@@ -125,9 +162,25 @@ fn autosave(
     mut timer: ResMut<AutosaveTimer>,
     campaign: Option<Res<Campaign>>,
     font: Res<FontHandle>,
+    cult_name: Res<CultName>,
+    cult_symbol: Res<CultSymbol>,
+    game_date: Res<GameDate>,
+    q_followers: Query<(), With<Follower>>,
+    q_bases: Query<(), With<Base>>,
+    funds: Res<Funds>,
 ) {
     if timer.tick(time.delta()).just_finished() {
-        save(commands.reborrow(), campaign, font);
+        save(
+            commands.reborrow(),
+            campaign,
+            font,
+            cult_name,
+            cult_symbol,
+            game_date,
+            q_followers,
+            q_bases,
+            funds,
+        );
     }
 }
 
@@ -136,9 +189,25 @@ fn listen_save_keys(
     keys: Res<ButtonInput<KeyCode>>,
     campaign: Option<Res<Campaign>>,
     font: Res<FontHandle>,
+    cult_name: Res<CultName>,
+    cult_symbol: Res<CultSymbol>,
+    game_date: Res<GameDate>,
+    q_followers: Query<(), With<Follower>>,
+    q_bases: Query<(), With<Base>>,
+    funds: Res<Funds>,
 ) {
     if keys.just_pressed(KeyCode::F5) {
-        save(commands.reborrow(), campaign, font);
+        save(
+            commands.reborrow(),
+            campaign,
+            font,
+            cult_name,
+            cult_symbol,
+            game_date,
+            q_followers,
+            q_bases,
+            funds,
+        );
     }
 }
 
