@@ -42,8 +42,7 @@ pub struct SaveMetadata {
     pub save_timestamp: DateTime<Utc>,
 }
 
-#[derive(Resource, Deref, Reflect)]
-#[reflect(Resource)]
+#[derive(Resource, Deref)]
 pub struct Campaign(usize);
 
 #[derive(Resource, Deref, DerefMut)]
@@ -87,7 +86,6 @@ fn save_inner(mut commands: Commands, index: usize) -> Result<(), SaveLoadError>
         file.write_all(SEPARATOR)
             .map_err(|e| SaveLoadError::WriteSaveError(path.clone(), e))?;
         let event = SaveWorld::default_into_stream(file)
-            .include_resource::<Campaign>()
             .include_resource::<Funds>()
             .include_resource::<IntelligenceSuspicion>()
             .include_resource::<ScientificSuspicion>()
