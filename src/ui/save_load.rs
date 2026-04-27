@@ -47,10 +47,8 @@ pub fn open_load_game_popup(mut commands: Commands, font: Handle<Font>) {
     v.reverse();
     let body = commands
         .spawn(Node {
-            display: Display::Grid,
+            flex_direction: FlexDirection::Column,
             width: percent(80.0),
-            grid_template_columns: vec![GridTrack::percent(100.0)],
-            grid_template_rows: vec![RepeatedGridTrack::min_content(4)],
             row_gap: px(4),
             ..default()
         })
@@ -60,7 +58,6 @@ pub fn open_load_game_popup(mut commands: Commands, font: Handle<Font>) {
         commands
             .spawn((
                 Node {
-                    min_width: percent(40.0),
                     border: UiRect::all(px(2)),
                     ..default()
                 },
