@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, ui::InteractionDisabled};
 use bevy_ui_text_input::{TextInputBuffer, TextInputMode, TextInputNode, TextInputPrompt};
 
 use crate::{
@@ -6,8 +6,11 @@ use crate::{
     main_menu::NewGame,
     state::GameState,
     text::TextKey,
-    ui::save_load::open_load_game_popup,
-    ui::{DisplayFontHandle, FontHandle, UnicodeFontHandle, dialog::DialogBuilder},
+    ui::{
+        DisplayFontHandle, FontHandle, UnicodeFontHandle,
+        dialog::{DialogBuilder, DialogConfirmEvent},
+        save_load::open_load_game_popup,
+    },
 };
 
 #[derive(Resource)]
@@ -35,7 +38,7 @@ pub fn setup_main_menu(
                 width: percent(100),
                 padding: UiRect::all(px(20)),
                 border: UiRect::all(px(4)),
-                border_radius: BorderRadius::all(px(40)),
+                border_radius: BorderRadius::all(px(20)),
                 align_self: AlignSelf::Center,
                 justify_self: JustifySelf::Center,
                 align_items: AlignItems::Center,
@@ -45,7 +48,7 @@ pub fn setup_main_menu(
             BorderColor::all(WHITE),
             BackgroundColor::from(MENU_BACKGROUND),
             children![(
-                TextFont::from_font_size(60.0).with_font(font_handle.0.clone()),
+                TextFont::from_font_size(48.0).with_font(font_handle.0.clone()),
                 TextKey::new(key),
             )],
         )
@@ -106,7 +109,7 @@ pub fn setup_main_menu(
                 .spawn(Node {
                     flex_direction: FlexDirection::Column,
                     align_self: AlignSelf::Center,
-                    row_gap: px(40),
+                    row_gap: px(20),
                     ..default()
                 })
                 .with_children(|parent| {
@@ -181,8 +184,12 @@ pub fn setup_main_menu(
                                                         TextFont::from_font_size(72.0).with_font(unicode_font_handle.0.clone()),
                                                     )
                                                 ]
-                                            )).observe(move |_: On<Pointer<Click>>, mut commands: Commands| {
+                                            )).observe(move |click: On<Pointer<Click>>, mut commands: Commands| {
                                                 commands.trigger(CultSymbolChanged(symbol));
+                                                commands.trigger(DialogConfirmEvent {
+                                                    entity: click.entity,
+                                                    enabled: true,
+                                                });
                                             });
                                         }
                                     });
@@ -193,13 +200,22 @@ pub fn setup_main_menu(
                                     .with_title("menu-button-new-game")
                                     .with_entity_body(entity)
                                     .with_cancel()
+                                    .with_confirm_disabled()
                                     .build(
                                         commands.reborrow(),
-                                        move |_: On<Pointer<Click>>, mut commands: Commands, mut game_state: ResMut<NextState<GameState>>, text_input_buffer: Single<&TextInputBuffer>| {
-                                            commands.insert_resource(CultName(text_input_buffer.get_text()));
-                                            commands.init_resource::<NewGame>();
-                                            commands.entity(cult_symbol_observer).despawn();
-                                            game_state.set(GameState::Main);
+                                        move |click: On<Pointer<Click>>,
+                                              mut commands: Commands,
+                                              mut game_state: ResMut<NextState<GameState>>,
+                                              text_input_buffer: Single<&TextInputBuffer>,
+                                              has_disableds: Query<Has<InteractionDisabled>>| {
+                                            if !has_disableds.get(click.entity).unwrap() {
+                                                let text = text_input_buffer.get_text();
+                                                let text = if text.is_empty() { "Nameless".into() } else { text };
+                                                commands.insert_resource(CultName(text));
+                                                commands.init_resource::<NewGame>();
+                                                commands.entity(cult_symbol_observer).despawn();
+                                                game_state.set(GameState::Main);
+                                            }
                                         },
                                     );
                             }

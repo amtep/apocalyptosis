@@ -1,4 +1,8 @@
-use bevy::{ecs::system::IntoObserverSystem, prelude::*};
+use bevy::{
+    ecs::system::IntoObserverSystem,
+    prelude::*,
+    ui::{FocusPolicy, InteractionDisabled},
+};
 
 use crate::{constants::ui::*, text::TextKey};
 
@@ -20,9 +24,20 @@ pub struct DialogBuilder {
     body: Option<DialogBody>,
     /// default label: "Confirm"
     confirm_label: Option<TextKey>,
+    confirm_disabled: bool,
     /// default label: None (no cancel button)
     cancel_label: Option<Option<TextKey>>,
 }
+
+#[derive(EntityEvent)]
+#[entity_event(propagate, auto_propagate)]
+pub struct DialogConfirmEvent {
+    pub entity: Entity,
+    pub enabled: bool,
+}
+
+#[derive(Component)]
+struct ConfirmButton(Entity);
 
 pub fn dialog_default_action(_: On<Pointer<Click>>) {}
 
@@ -39,6 +54,13 @@ impl DialogBuilder {
     pub fn with_pause(self) -> Self {
         Self {
             pause: true,
+            ..self
+        }
+    }
+
+    pub fn with_confirm_disabled(self) -> Self {
+        Self {
+            confirm_disabled: true,
             ..self
         }
     }
@@ -97,7 +119,19 @@ impl DialogBuilder {
         O: IntoObserverSystem<Pointer<Click>, B, M>,
         B: Bundle,
     {
+        let dialog_background = commands
+            .spawn((
+                Node {
+                    width: percent(100),
+                    height: percent(100),
+                    ..default()
+                },
+                FocusPolicy::Block,
+            ))
+            .id();
+
         let mut entity_commands = commands.spawn((
+            ChildOf(dialog_background),
             DialogRoot,
             Node {
                 left: percent(50),
@@ -156,7 +190,27 @@ impl DialogBuilder {
                         TextFont::from_font_size(SMALL).with_font(font),
                     ))
                 }
-                DialogBody::Entity(entity) => entity_commands.add_child(entity),
+                DialogBody::Entity(entity) => {
+                    entity_commands.observe(
+                        |mut dialog_confirm: On<DialogConfirmEvent>,
+                         mut commands: Commands,
+                         confirm_buttons: Query<&ConfirmButton>| {
+                            if let Ok(confirm_button) = confirm_buttons.get(dialog_confirm.entity) {
+                                if dialog_confirm.enabled {
+                                    commands
+                                        .entity(confirm_button.0)
+                                        .try_remove::<InteractionDisabled>();
+                                } else {
+                                    commands
+                                        .entity(confirm_button.0)
+                                        .insert(InteractionDisabled);
+                                }
+                            }
+                            dialog_confirm.propagate(false);
+                        },
+                    );
+                    entity_commands.add_child(entity)
+                }
             }
             .with_child(Node {
                 flex_grow: 1.0,
@@ -199,24 +253,37 @@ impl DialogBuilder {
                     };
 
                     if let Some(cancel_label) = self.cancel_label {
-                        let cancel_label = cancel_label.unwrap_or_else(|| TextKey::new("cancel"));
+                        let cancel_label =
+                            cancel_label.unwrap_or_else(|| TextKey::new("dialog-cancel"));
 
                         parent.spawn(button(cancel_label)).observe(
                             move |_: On<Pointer<Click>>, mut commands: Commands| {
-                                commands.entity(dialog_root).despawn();
+                                commands.entity(dialog_background).despawn();
                             },
                         );
                     }
 
                     let confirm_label = self
                         .confirm_label
-                        .unwrap_or_else(|| TextKey::new("confirm"));
-                    parent
-                        .spawn(button(confirm_label))
-                        .observe(move |_: On<Pointer<Click>>, mut commands: Commands| {
-                            commands.entity(dialog_root).despawn();
+                        .unwrap_or_else(|| TextKey::new("dialog-confirm"));
+
+                    let mut confirm_button = parent
+                        .spawn(button(confirm_label));
+
+                    if self.confirm_disabled {
+                        confirm_button.insert(InteractionDisabled);
+                    }
+
+                    confirm_button
+                        .observe(move |click: On<Pointer<Click>>, mut commands: Commands, has_disableds: Query<Has<InteractionDisabled>>| {
+                            if !has_disableds.get(click.entity).unwrap() {
+                                commands.entity(dialog_background).despawn();
+                            }
                         })
                         .observe(confirm_action);
+
+                    let confirm_button = confirm_button.id();
+                    parent.commands().entity(dialog_root).insert(ConfirmButton(confirm_button));
                 });
         });
     }

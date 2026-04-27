@@ -29,6 +29,7 @@ pub mod ui {
     pub const THEME_CYAN: Srgba = Srgba::rgb(0.243, 0.816, 0.922); // #3ED0EB
 
     pub const WHITE: Srgba = Srgba::rgb(0.878, 0.878, 0.878);
+    pub const GREY: Srgba = Srgba::rgb(0.4, 0.4, 0.4);
     pub const BLACK: Srgba = Srgba::rgb(0.071, 0.071, 0.071);
     pub const YELLOW: Srgba = Srgba::rgb(1.00, 1.00, 0.384);
     pub const GREEN: Srgba = Srgba::rgb(0.694, 1.00, 0.384);
@@ -50,6 +51,7 @@ pub mod ui {
     pub const TEXT_MIXED: Srgba = ORANGE;
     pub const TEXT_NEGATIVE: Srgba = RED;
     pub const TEXT_NEUTRAL: Srgba = BLUE;
+    pub const TEXT_DISABLED: Srgba = GREY;
 
     pub const HEADING: f32 = 24.0;
     pub const SUB_HEADING: f32 = 20.0;
