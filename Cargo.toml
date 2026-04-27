@@ -10,6 +10,7 @@ dev = ["bevy/dev"]
 [dependencies]
 bevy_common_assets = { version = "0.16.0", features = ["toml"] }
 chrono = { version = "0.4.44", default-features = false, features = ["std", "serde", "now"] }
+bevy_ui_text_input = "0.7.0"
 directories = "6.0.0"
 fluent = "0.17.0"
 fluent-datetime = "0.2.0"

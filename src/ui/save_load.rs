@@ -4,7 +4,7 @@ use crate::{
     constants::ui::{BORDER, NORMAL},
     save_load::scan_saved_games,
     text::TextKey,
-    ui::dialog::DialogBuilder,
+    ui::dialog::{DialogBuilder, dialog_default_action},
 };
 
 pub fn warn_no_save(mut commands: Commands, font: Handle<Font>) {
@@ -13,7 +13,7 @@ pub fn warn_no_save(mut commands: Commands, font: Handle<Font>) {
         .with_title("save-error-title")
         .with_text_body("save-error-body")
         .with_confirm_label("dialog-ok")
-        .build(&mut commands);
+        .build(commands.reborrow(), dialog_default_action);
 }
 
 fn warn_no_load_scan(mut commands: Commands, font: Handle<Font>) {
@@ -22,7 +22,7 @@ fn warn_no_load_scan(mut commands: Commands, font: Handle<Font>) {
         .with_text_body("load-scan-error-body")
         .with_confirm_label("dialog-ok")
         .with_cancel_label("dialog-back")
-        .build(&mut commands);
+        .build(commands.reborrow(), dialog_default_action);
 }
 
 fn warn_no_load(mut commands: Commands, font: Handle<Font>) {
@@ -31,7 +31,7 @@ fn warn_no_load(mut commands: Commands, font: Handle<Font>) {
         .with_text_body("load-error-body")
         .with_confirm_label("dialog-ok")
         .with_cancel_label("dialog-back")
-        .build(&mut commands);
+        .build(commands.reborrow(), dialog_default_action);
 }
 
 pub fn open_load_game_popup(mut commands: Commands, font: Handle<Font>) {
@@ -78,5 +78,5 @@ pub fn open_load_game_popup(mut commands: Commands, font: Handle<Font>) {
         .with_title("load-game-title")
         .with_entity_body(body)
         .with_cancel_label("dialog-back")
-        .build(&mut commands);
+        .build(commands.reborrow(), dialog_default_action);
 }

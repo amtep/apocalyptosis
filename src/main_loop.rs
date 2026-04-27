@@ -1,4 +1,5 @@
 use bevy::{prelude::*, window::WindowMode};
+use bevy_ui_text_input::TextInputPlugin;
 use pyri_tooltip::TooltipPlugin;
 
 pub fn main_loop() {
@@ -20,6 +21,7 @@ pub fn main_loop() {
                     ..default()
                 }),
             TooltipPlugin::default(),
+            TextInputPlugin,
             crate::state::plugin,
             crate::text::plugin,
             crate::regions::plugin,

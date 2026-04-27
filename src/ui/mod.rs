@@ -16,7 +16,10 @@ use crate::{
     suspicion::{IntelligenceSuspicion, MediaSuspicion, PoliceSuspicion, ScientificSuspicion},
     text::TextKey,
     time::{CurrentGameSpeed, GameDate, GameSpeed, GameSpeedAction, GameSpeedChangedEvent},
-    ui::{buttons::setup_observe_buttons, main_menu::setup_main_menu},
+    ui::{
+        buttons::setup_observe_buttons,
+        main_menu::{CultSymbol, setup_main_menu},
+    },
 };
 
 mod buttons;
@@ -159,6 +162,7 @@ fn setup_map(
     unicode_font_handle: Res<UnicodeFontHandle>,
     asset_server: Res<AssetServer>,
     game_date: Res<GameDate>,
+    cult_symbol: Res<CultSymbol>,
 ) {
     let tooltip_content = commands
         .spawn((
@@ -203,6 +207,16 @@ fn setup_map(
                     BackgroundColor::from(MENU_BACKGROUND),
                 ))
                 .with_children(|parent| {
+                    // Cult symbol
+                    parent.spawn((
+                        Node {
+                            margin: UiRect::right(px(5)),
+                            ..default()
+                        },
+                        Text::new(cult_symbol.0),
+                        TextColor::from(TEXT),
+                        unicode_text_font.clone(),
+                    ));
                     // Funds counter
                     parent.spawn((
                         Node {

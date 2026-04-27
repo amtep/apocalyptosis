@@ -11,7 +11,7 @@ pub fn plugin(app: &mut App) {
     );
 }
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct NewGame;
 
 fn remove_new_game(mut commands: Commands) {

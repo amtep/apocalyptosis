@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{ecs::system::IntoObserverSystem, prelude::*};
 
 use crate::{constants::ui::*, text::TextKey};
 
@@ -11,12 +11,8 @@ pub enum DialogBody {
     Entity(Entity),
 }
 
-#[derive(Debug)]
-pub struct DialogBuilder<F1 = fn(&mut Commands), F2 = fn(&mut Commands)>
-where
-    F1: for<'a> FnOnce(&'a mut Commands) + Send + Sync + 'static,
-    F2: for<'a> FnOnce(&'a mut Commands) + Send + Sync + 'static,
-{
+#[derive(Debug, Default)]
+pub struct DialogBuilder {
     font: Handle<Font>,
     text_body_font: Option<Handle<Font>>,
     pause: bool,
@@ -24,27 +20,11 @@ where
     body: Option<DialogBody>,
     /// default label: "Confirm"
     confirm_label: Option<TextKey>,
-    confirm_action: Option<F1>,
     /// default label: None (no cancel button)
     cancel_label: Option<Option<TextKey>>,
-    cancel_action: Option<F2>,
 }
 
-impl Default for DialogBuilder {
-    fn default() -> Self {
-        Self {
-            font: Default::default(),
-            text_body_font: Default::default(),
-            pause: Default::default(),
-            title: Default::default(),
-            body: Default::default(),
-            confirm_label: Default::default(),
-            confirm_action: Default::default(),
-            cancel_label: Default::default(),
-            cancel_action: Default::default(),
-        }
-    }
-}
+pub fn dialog_default_action(_: On<Pointer<Click>>) {}
 
 impl DialogBuilder {
     pub fn new(font: Handle<Font>) -> Self {
@@ -55,11 +35,7 @@ impl DialogBuilder {
     }
 }
 
-impl<F1, F2> DialogBuilder<F1, F2>
-where
-    F1: for<'a> FnOnce(&'a mut Commands) + Send + Sync + 'static,
-    F2: for<'a> FnOnce(&'a mut Commands) + Send + Sync + 'static,
-{
+impl DialogBuilder {
     pub fn with_pause(self) -> Self {
         Self {
             pause: true,
@@ -116,41 +92,11 @@ where
         }
     }
 
-    pub fn with_confirm_action<F>(self, action: F) -> DialogBuilder<F, F2>
+    pub fn build<B, M, O>(self, mut commands: Commands, confirm_action: O)
     where
-        F: for<'a> FnOnce(&'a mut Commands) + Send + Sync + 'static,
+        O: IntoObserverSystem<Pointer<Click>, B, M>,
+        B: Bundle,
     {
-        DialogBuilder {
-            font: self.font,
-            text_body_font: self.text_body_font,
-            pause: self.pause,
-            title: self.title,
-            body: self.body,
-            confirm_label: self.confirm_label,
-            confirm_action: Some(action),
-            cancel_label: self.cancel_label,
-            cancel_action: self.cancel_action,
-        }
-    }
-
-    pub fn with_cancel_action<F>(self, action: F) -> DialogBuilder<F1, F>
-    where
-        F: for<'a> FnOnce(&'a mut Commands) + Send + Sync + 'static,
-    {
-        DialogBuilder {
-            font: self.font,
-            text_body_font: self.text_body_font,
-            pause: self.pause,
-            title: self.title,
-            body: self.body,
-            confirm_label: self.confirm_label,
-            confirm_action: self.confirm_action,
-            cancel_label: self.cancel_label,
-            cancel_action: Some(action),
-        }
-    }
-
-    pub fn build(mut self, commands: &mut Commands) {
         let mut entity_commands = commands.spawn((
             DialogRoot,
             Node {
@@ -257,9 +203,6 @@ where
 
                         parent.spawn(button(cancel_label)).observe(
                             move |_: On<Pointer<Click>>, mut commands: Commands| {
-                                if let Some(cancel_action) = self.cancel_action.take() {
-                                    cancel_action(&mut commands);
-                                }
                                 commands.entity(dialog_root).despawn();
                             },
                         );
@@ -268,14 +211,12 @@ where
                     let confirm_label = self
                         .confirm_label
                         .unwrap_or_else(|| TextKey::new("confirm"));
-                    parent.spawn(button(confirm_label)).observe(
-                        move |_: On<Pointer<Click>>, mut commands: Commands| {
-                            if let Some(confirm_action) = self.confirm_action.take() {
-                                confirm_action(&mut commands);
-                            }
+                    parent
+                        .spawn(button(confirm_label))
+                        .observe(move |_: On<Pointer<Click>>, mut commands: Commands| {
                             commands.entity(dialog_root).despawn();
-                        },
-                    );
+                        })
+                        .observe(confirm_action);
                 });
         });
     }

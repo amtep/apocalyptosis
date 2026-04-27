@@ -1,12 +1,26 @@
 use bevy::prelude::*;
+use bevy_ui_text_input::{TextInputBuffer, TextInputMode, TextInputNode, TextInputPrompt};
 
 use crate::{
     constants::ui::*,
     main_menu::NewGame,
     state::GameState,
     text::TextKey,
-    ui::{DisplayFontHandle, FontHandle, save_load::open_load_game_popup},
+    ui::save_load::open_load_game_popup,
+    ui::{DisplayFontHandle, FontHandle, UnicodeFontHandle, dialog::DialogBuilder},
 };
+
+#[derive(Resource)]
+pub struct CultName(pub String);
+
+#[derive(Resource)]
+pub struct CultSymbol(pub char);
+
+#[derive(Component)]
+struct CultSym(char);
+
+#[derive(Event)]
+struct CultSymbolChanged(char);
 
 pub fn setup_main_menu(
     mut commands: Commands,
@@ -36,6 +50,24 @@ pub fn setup_main_menu(
             )],
         )
     };
+
+    let cult_symbol_observer = commands
+        .add_observer(
+            |event: On<CultSymbolChanged>,
+             mut commands: Commands,
+             mut cult_symbols: Query<(&mut TextColor, &CultSym)>| {
+                for (mut text_color, sym) in cult_symbols.iter_mut() {
+                    if sym.0 == event.0 {
+                        text_color.0 = TEXT_NEUTRAL.into();
+                    } else {
+                        text_color.0 = TEXT.into();
+                    }
+                }
+                commands.insert_resource(CultSymbol(event.0));
+            },
+        )
+        .id();
+
     commands
         .spawn((
             DespawnOnExit(GameState::MainMenu),
@@ -79,12 +111,97 @@ pub fn setup_main_menu(
                 })
                 .with_children(|parent| {
                     parent.spawn(button("menu-button-new-game")).observe(
-                        |click: On<Pointer<Click>>,
+                        move |click: On<Pointer<Click>>,
                          mut commands: Commands,
-                         mut game_state: ResMut<NextState<GameState>>| {
+                         font_handle: Res<FontHandle>,
+                         unicode_font_handle: Res<UnicodeFontHandle>| {
                             if click.button == PointerButton::Primary {
-                                commands.insert_resource(NewGame);
-                                game_state.set(GameState::Main);
+
+                                let entity = commands.spawn(Node {
+                                    flex_direction: FlexDirection::Column,
+                                    align_items: AlignItems::Center,
+                                    width: percent(100),
+                                    ..Default::default()
+                                }).with_child(
+                                    (
+                                        TextInputNode {
+                                            mode: TextInputMode::SingleLine,
+                                            justification: Justify::Center,
+                                            max_chars: Some(20),
+                                            clear_on_submit: false,
+                                            unfocus_on_submit: false,
+                                            ..Default::default()
+                                        },
+                                        TextInputPrompt {
+                                            text: "Cult Name".into(),
+                                        ..Default::default()
+                                        },
+                                        Node {
+                                            width: percent(75),
+                                            height: px(28),
+                                            margin: UiRect::all(px(10.0)),
+                                            ..Default::default()
+                                        },
+                                        TextFont::from_font_size(SUB_HEADING).with_font(font_handle.0.clone()),
+                                        TextColor::from(TEXT_NEUTRAL),
+                                        BackgroundColor::from(BLACK),
+                                    )
+                                )
+                                .with_children(|parent| {
+                                    parent.spawn(Node {
+                                        display: Display::Grid,
+                                        align_items: AlignItems::Stretch,
+                                        justify_items: JustifyItems::Stretch,
+                                        grid_template_columns: RepeatedGridTrack::flex(4, 1.0),
+                                        grid_template_rows: RepeatedGridTrack::flex(2, 1.0),
+                                        row_gap: px(10),
+                                        column_gap: px(10),
+                                        margin: UiRect::all(px(10.0)),
+                                        ..default()
+                                    }).with_children(|parent| {
+                                        for symbol in ['✭', '✥', '✯', '❂', '♔', '♛', '♁', '⚜'] {
+                                            parent.spawn((
+                                                Node {
+                                                    width: px(120),
+                                                    height: px(120),
+                                                    border: UiRect::all(px(5)),
+                                                    border_radius: BorderRadius::all(px(10)),
+                                                    align_items: AlignItems::Center,
+                                                    justify_content: JustifyContent::Center,
+                                                    ..default()
+                                                },
+                                                Button,
+                                                BorderColor::all(BORDER),
+                                                BackgroundColor::from(MENU_BACKGROUND),
+                                                children![
+                                                    (
+                                                        Text::new(symbol),
+                                                        CultSym(symbol),
+                                                        TextColor::from(TEXT),
+                                                        TextFont::from_font_size(72.0).with_font(unicode_font_handle.0.clone()),
+                                                    )
+                                                ]
+                                            )).observe(move |_: On<Pointer<Click>>, mut commands: Commands| {
+                                                commands.trigger(CultSymbolChanged(symbol));
+                                            });
+                                        }
+                                    });
+                                })
+                                .id();
+
+                                DialogBuilder::new(font_handle.0.clone())
+                                    .with_title("menu-button-new-game")
+                                    .with_entity_body(entity)
+                                    .with_cancel()
+                                    .build(
+                                        commands.reborrow(),
+                                        move |_: On<Pointer<Click>>, mut commands: Commands, mut game_state: ResMut<NextState<GameState>>, text_input_buffer: Single<&TextInputBuffer>| {
+                                            commands.insert_resource(CultName(text_input_buffer.get_text()));
+                                            commands.init_resource::<NewGame>();
+                                            commands.entity(cult_symbol_observer).despawn();
+                                            game_state.set(GameState::Main);
+                                        },
+                                    );
                             }
                         },
                     );
