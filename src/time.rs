@@ -37,6 +37,7 @@ fn setup(mut commands: Commands) {
 
 #[derive(Resource, Default)]
 pub struct CurrentGameSpeed {
+    pub dialog_open: u32,
     pub paused: bool,
     pub speed: GameSpeed,
 }
@@ -54,10 +55,22 @@ pub enum GameSpeed {
     Faster,
 }
 
+impl GameSpeed {
+    fn get(self) -> f32 {
+        match self {
+            GameSpeed::Normal => 1.0,
+            GameSpeed::Fast => 2.0,
+            GameSpeed::Faster => 5.0,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Component)]
 pub enum GameSpeedAction {
     SetSpeed(GameSpeed),
     TogglePause,
+    DialogOpen,
+    DialogClose,
 }
 
 #[derive(Event)]
@@ -69,21 +82,18 @@ fn on_game_speed_changed(
     mut current_game_speed: ResMut<CurrentGameSpeed>,
 ) {
     match event.0 {
-        GameSpeedAction::SetSpeed(speed) => {
-            let s = match speed {
-                GameSpeed::Normal => 1.0,
-                GameSpeed::Fast => 2.0,
-                GameSpeed::Faster => 5.0,
-            };
+        GameSpeedAction::SetSpeed(speed) if current_game_speed.dialog_open == 0 => {
+            let s = speed.get();
             info!("Game speed to {s}");
             time.set_relative_speed(s);
             time.unpause();
             *current_game_speed = CurrentGameSpeed {
+                dialog_open: 0,
                 paused: false,
                 speed,
             };
         }
-        GameSpeedAction::TogglePause => {
+        GameSpeedAction::TogglePause if current_game_speed.dialog_open == 0 => {
             if current_game_speed.paused {
                 info!("Unpausing");
                 time.unpause();
@@ -93,6 +103,20 @@ fn on_game_speed_changed(
             }
             current_game_speed.paused = !current_game_speed.paused;
         }
+        GameSpeedAction::DialogOpen => {
+            current_game_speed.dialog_open += 1;
+            if !time.is_paused() {
+                time.pause();
+            }
+        }
+        GameSpeedAction::DialogClose => {
+            current_game_speed.dialog_open -= 1;
+            if current_game_speed.dialog_open == 0 && !current_game_speed.paused {
+                time.set_relative_speed(current_game_speed.speed.get());
+                time.unpause();
+            }
+        }
+        _ => (),
     }
 }
 

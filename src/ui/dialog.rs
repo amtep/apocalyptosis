@@ -4,13 +4,17 @@ use bevy::{
     ui::{FocusPolicy, InteractionDisabled},
 };
 
-use crate::{constants::ui::*, text::TextKey};
+use crate::{
+    constants::ui::*,
+    text::TextKey,
+    time::{GameSpeedAction, GameSpeedChangedEvent},
+};
 
 #[derive(Component)]
-pub struct DialogRoot;
+struct DialogRoot;
 
 #[derive(Debug)]
-pub enum DialogBody {
+enum DialogBody {
     Text(TextKey),
     Entity(Entity),
 }
@@ -119,6 +123,10 @@ impl DialogBuilder {
         O: IntoObserverSystem<Pointer<Click>, B, M>,
         B: Bundle,
     {
+        if self.pause {
+            commands.trigger(GameSpeedChangedEvent(GameSpeedAction::DialogOpen));
+        }
+
         let dialog_background = commands
             .spawn((
                 Node {
@@ -136,7 +144,7 @@ impl DialogBuilder {
             Node {
                 left: percent(50),
                 top: percent(50),
-                min_width: percent(50),
+                min_width: percent(25),
                 max_width: percent(50),
                 min_height: percent(50),
                 max_height: percent(75),
@@ -259,6 +267,9 @@ impl DialogBuilder {
                         parent.spawn(button(cancel_label)).observe(
                             move |_: On<Pointer<Click>>, mut commands: Commands| {
                                 commands.entity(dialog_background).despawn();
+                                if self.pause {
+                                    commands.trigger(GameSpeedChangedEvent(GameSpeedAction::DialogClose));
+                                }
                             },
                         );
                     }
@@ -278,6 +289,9 @@ impl DialogBuilder {
                         .observe(move |click: On<Pointer<Click>>, mut commands: Commands, has_disableds: Query<Has<InteractionDisabled>>| {
                             if !has_disableds.get(click.entity).unwrap() {
                                 commands.entity(dialog_background).despawn();
+                                if self.pause {
+                                    commands.trigger(GameSpeedChangedEvent(GameSpeedAction::DialogClose));
+                                }
                             }
                         })
                         .observe(confirm_action);
