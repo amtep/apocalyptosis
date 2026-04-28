@@ -1,4 +1,5 @@
 use std::{
+    ffi::OsString,
     fs::{File, create_dir_all, read_dir},
     io::{Cursor, Write},
     path::PathBuf,
@@ -31,6 +32,7 @@ use crate::{
 };
 
 const SEPARATOR: &[u8] = b"\n\nAPOCALYPTOSIS\n";
+const EXTENSION: &str = "save";
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
@@ -92,7 +94,7 @@ fn save_inner(
     ) {
         let path = pd
             .data_dir()
-            .join(format!("saves/{index}.apocalyptosis.save"));
+            .join(format!("saves/{index}.apocalyptosis.{EXTENSION}"));
         info!("Saving to {}", path.display());
         let mut file =
             File::create(&path).map_err(|e| SaveLoadError::CreateSaveError(path.clone(), e))?;
@@ -229,6 +231,9 @@ fn calc_new_campaign_index() -> Result<usize, SaveLoadError> {
             read_dir(&save_dir).map_err(|e| SaveLoadError::ReadDirError(save_dir.to_owned(), e))?
         {
             let entry = entry.map_err(|e| SaveLoadError::ReadEntryError(save_dir.to_owned(), e))?;
+            if entry.path().extension() != Some(&OsString::from(EXTENSION)) {
+                continue;
+            }
             // Parse the leading number in the filename
             if let Some(Ok(index)) = entry
                 .file_name()
@@ -261,6 +266,9 @@ pub fn scan_saved_games() -> Result<Vec<(Campaign, SaveMetadata, Vec<u8>)>, Save
             read_dir(&save_dir).map_err(|e| SaveLoadError::ReadDirError(save_dir.to_owned(), e))?
         {
             let entry = entry.map_err(|e| SaveLoadError::ReadEntryError(save_dir.to_owned(), e))?;
+            if entry.path().extension() != Some(&OsString::from(EXTENSION)) {
+                continue;
+            }
             // Parse the leading number in the filename
             if let Some(Ok(index)) = entry
                 .file_name()
