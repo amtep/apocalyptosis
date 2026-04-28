@@ -138,7 +138,7 @@ fn save(
             }
             Err(e) => {
                 error!("Save error! could not determine campaign index: {e}");
-                warn_no_save();
+                commands.spawn(warn_no_save());
                 return;
             }
         }
@@ -154,7 +154,7 @@ fn save(
     };
     if let Err(e) = save_inner(commands.reborrow(), index, metadata) {
         error!("Save error! {e}");
-        warn_no_save();
+        commands.spawn(warn_no_save());
     }
 }
 

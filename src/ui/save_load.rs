@@ -15,6 +15,7 @@ use crate::{
 #[derive(Component)]
 struct LoadGameOption(Campaign, Vec<u8>);
 
+#[must_use]
 pub fn warn_no_save() -> Dialog {
     Dialog::new()
         .with_pause()
@@ -23,6 +24,7 @@ pub fn warn_no_save() -> Dialog {
         .with_confirm_label("dialog-ok")
 }
 
+#[must_use]
 fn warn_no_load_scan() -> Dialog {
     Dialog::new()
         .with_title("load-scan-error-title")
@@ -31,6 +33,7 @@ fn warn_no_load_scan() -> Dialog {
         .with_cancel_label("dialog-back")
 }
 
+#[must_use]
 fn warn_no_load() -> Dialog {
     Dialog::new()
         .with_title("load-error-title")
@@ -43,7 +46,7 @@ pub fn open_load_game_popup(mut commands: Commands, font: Handle<Font>) {
     let mut v = match scan_saved_games() {
         Err(e) => {
             error!("Could not scan saved games: {e}");
-            warn_no_load_scan();
+            commands.spawn(warn_no_load_scan());
             return;
         }
         Ok(v) => v,
