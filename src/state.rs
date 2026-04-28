@@ -14,6 +14,7 @@ pub fn plugin(app: &mut App) {
                 MainSetupSet::Ui,
                 MainSetupSet::Bases,
                 MainSetupSet::Followers,
+                MainSetupSet::Save,
                 MainSetupSet::Late,
             )
                 .chain(),
@@ -32,9 +33,10 @@ pub enum GameState {
 pub enum MainSetupSet {
     Default,
     Regions,
+    Ui,
     Bases,
     Followers,
-    Ui,
+    Save,
     Late,
 }
 

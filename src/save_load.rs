@@ -25,7 +25,8 @@ use crate::{
     },
     followers::Follower,
     funds::{Funds, FundsAmount},
-    state::GameState,
+    main_menu::NewGame,
+    state::{GameState, MainSetupSet},
     suspicion::{IntelligenceSuspicion, ScientificSuspicion},
     time::GameDate,
     ui::save_load::warn_no_save,
@@ -38,6 +39,12 @@ pub fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (autosave, listen_save_keys).run_if(in_state(GameState::Main)),
+    )
+    .add_systems(
+        OnEnter(GameState::Main),
+        first_save
+            .run_if(resource_exists::<NewGame>)
+            .in_set(MainSetupSet::Save),
     )
     .insert_resource(AutosaveTimer(Timer::new(
         AUTOSAVE_INTERVAL,
@@ -191,6 +198,28 @@ fn autosave(
             funds,
         );
     }
+}
+
+fn first_save(
+    mut commands: Commands,
+    campaign: Option<Res<Campaign>>,
+    cult_name: Res<CultName>,
+    cult_symbol: Res<CultSymbol>,
+    game_date: Res<GameDate>,
+    q_followers: Query<(), With<Follower>>,
+    q_bases: Query<(), With<Base>>,
+    funds: Res<Funds>,
+) {
+    save(
+        commands.reborrow(),
+        campaign,
+        cult_name,
+        cult_symbol,
+        game_date,
+        q_followers,
+        q_bases,
+        funds,
+    );
 }
 
 fn listen_save_keys(
