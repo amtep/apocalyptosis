@@ -18,7 +18,7 @@ use crate::{
     time::{CurrentGameSpeed, GameDate, GameSpeed, GameSpeedAction, GameSpeedChangedEvent},
     ui::{
         buttons::setup_observe_buttons,
-        main_menu::{CultSymbol, setup_main_menu},
+        main_menu::{CultName, CultSymbol, setup_main_menu},
     },
 };
 
@@ -162,6 +162,7 @@ fn setup_map(
     unicode_font_handle: Res<UnicodeFontHandle>,
     asset_server: Res<AssetServer>,
     game_date: Res<GameDate>,
+    cult_name: Res<CultName>,
     cult_symbol: Res<CultSymbol>,
 ) {
     let tooltip_content = commands
@@ -226,6 +227,7 @@ fn setup_map(
                         text_font.clone(),
                         // will be updated by funds_changed
                         TextKey::new("funds-display").add_arg("funds", 0),
+                        TextColor::from(TEXT),
                         FundsUi,
                         Tooltip {
                             content: TooltipContent::Custom(tooltip_content),
@@ -246,6 +248,7 @@ fn setup_map(
                             ..default()
                         },
                         text_font.clone(),
+                        TextColor::from(TEXT),
                         // will be updated by update_game_date
                         TextKey::new("game-date-display").add_arg("date", game_date.0),
                         GameDateUi,
@@ -284,6 +287,16 @@ fn setup_map(
                         flex_grow: 1.0,
                         ..default()
                     });
+                    parent.spawn((
+                        Node {
+                            margin: UiRect::right(px(10)),
+                            align_self: AlignSelf::Center,
+                            ..default()
+                        },
+                        Text::new(&cult_name.0),
+                        TextColor::from(TEXT),
+                        TextFont::from_font_size(SMALL).with_font(font_handle.0.clone()),
+                    ));
                     parent
                         .spawn((
                             Button,
@@ -409,8 +422,8 @@ fn setup_regions(
             .observe(on_label_out)
             .with_children(|parent| {
                 parent.spawn((
-                    TextKey::new(format!("region-{}", region.name)),
-                    TextFont::from_font_size(HEADING).with_font(display_font_handle.0.clone()),
+                    region.get_text_key(),
+                    TextFont::from_font_size(SUB_HEADING).with_font(display_font_handle.0.clone()),
                 ));
                 parent.spawn((
                     ViewOf(entity),
@@ -539,11 +552,7 @@ fn on_spawn_base(
         .with_children(|parent| {
             parent.spawn((
                 TextKey::new(format!("basetype-{}", &base_type.name)),
-                TextFont {
-                    font_size: 14.0,
-                    font: font_handle.0.clone(),
-                    ..default()
-                },
+                TextFont::from_font_size(NORMAL).with_font(font_handle.0.clone()),
             ));
             parent.spawn((
                 FollowerList,

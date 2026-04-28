@@ -8,6 +8,7 @@ use serde::Deserialize;
 use crate::{
     state::{GameState, MainSetupSet},
     suspicion::{MediaSuspicion, PoliceSuspicion},
+    text::TextKey,
 };
 
 const REGIONS_ASSET_PATH: &str = "data/define.regions.toml";
@@ -49,6 +50,12 @@ pub struct RegionSettings {
 #[require(Save)]
 pub struct Region {
     pub name: String,
+}
+
+impl Region {
+    pub fn get_text_key(&self) -> TextKey {
+        TextKey::new(format!("region-{}", self.name))
+    }
 }
 
 #[derive(Component, Reflect)]
