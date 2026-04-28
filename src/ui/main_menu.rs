@@ -1,4 +1,4 @@
-use bevy::{prelude::*, ui::InteractionDisabled};
+use bevy::prelude::*;
 use bevy_ui_text_input::{TextInputBuffer, TextInputMode, TextInputNode, TextInputPrompt};
 
 use crate::{
@@ -9,7 +9,7 @@ use crate::{
     text::TextKey,
     ui::{
         DisplayFontHandle, FontHandle, UnicodeFontHandle,
-        dialog::{DialogBuilder, DialogConfirmEvent},
+        dialog::{Dialog, DialogConfirmEvent, DialogConfirmed},
         save_load::open_load_game_popup,
     },
 };
@@ -191,27 +191,23 @@ pub fn setup_main_menu(
                                 })
                                 .id();
 
-                                DialogBuilder::new(font_handle.0.clone())
+                                commands.spawn(Dialog::new()
                                     .with_title("menu-button-new-game")
                                     .with_entity_body(entity)
                                     .with_cancel()
-                                    .with_confirm_disabled()
-                                    .build(
-                                        commands.reborrow(),
-                                        move |click: On<Pointer<Click>>,
-                                              mut commands: Commands,
-                                              mut game_state: ResMut<NextState<GameState>>,
-                                              text_input_buffer: Single<&TextInputBuffer>,
-                                              has_disableds: Query<Has<InteractionDisabled>>| {
-                                            if !has_disableds.get(click.entity).unwrap() {
-                                                let text = text_input_buffer.get_text();
-                                                let text = if text.is_empty() { "Nameless".into() } else { text };
-                                                commands.insert_resource(CultName(text));
-                                                commands.init_resource::<NewGame>();
-                                                commands.entity(cult_symbol_observer).despawn();
-                                                game_state.set(GameState::Main);
-                                            }
-                                        },
+                                    .with_confirm_disabled()).observe(
+                                        move |_: On<Add, DialogConfirmed>,
+                                         mut commands: Commands,
+                                         mut game_state: ResMut<NextState<GameState>>,
+                                         text_input_buffer: Single<&TextInputBuffer>,
+                                        | {
+                                             let text = text_input_buffer.get_text();
+                                             let text = if text.is_empty() { "Nameless".into() } else { text };
+                                             commands.insert_resource(CultName(text));
+                                             commands.init_resource::<NewGame>();
+                                             commands.entity(cult_symbol_observer).despawn();
+                                             game_state.set(GameState::Main);
+                                        }
                                     );
                             }
                         },

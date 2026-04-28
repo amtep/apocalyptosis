@@ -17,7 +17,9 @@ use crate::{
     suspicion::{IntelligenceSuspicion, MediaSuspicion, PoliceSuspicion, ScientificSuspicion},
     text::TextKey,
     time::{CurrentGameSpeed, GameDate, GameSpeed, GameSpeedAction, GameSpeedChangedEvent},
-    ui::{buttons::setup_observe_buttons, main_menu::setup_main_menu},
+    ui::{
+        buttons::setup_observe_buttons, dialog::setup_observe_dialogs, main_menu::setup_main_menu,
+    },
 };
 
 mod buttons;
@@ -31,6 +33,7 @@ pub fn plugin(app: &mut App) {
         .init_resource::<UiScale>()
         .init_resource::<InputFocus>()
         .add_systems(OnExit(GameState::Load), setup_observe_buttons)
+        .add_systems(OnExit(GameState::Load), setup_observe_dialogs)
         .add_systems(Update, read_window_resized_messages)
         .add_systems(OnEnter(GameState::MainMenu), setup_main_menu)
         .add_systems(

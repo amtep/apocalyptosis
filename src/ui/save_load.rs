@@ -4,41 +4,38 @@ use crate::{
     constants::ui::{BORDER, NORMAL},
     save_load::scan_saved_games,
     text::TextKey,
-    ui::dialog::{DialogBuilder, dialog_default_action},
+    ui::dialog::Dialog,
 };
 
-pub fn warn_no_save(mut commands: Commands, font: Handle<Font>) {
-    DialogBuilder::new(font)
+pub fn warn_no_save() -> Dialog {
+    Dialog::new()
         .with_pause()
         .with_title("save-error-title")
         .with_text_body("save-error-body")
         .with_confirm_label("dialog-ok")
-        .build(commands.reborrow(), dialog_default_action);
 }
 
-fn warn_no_load_scan(mut commands: Commands, font: Handle<Font>) {
-    DialogBuilder::new(font)
+fn warn_no_load_scan() -> Dialog {
+    Dialog::new()
         .with_title("load-scan-error-title")
         .with_text_body("load-scan-error-body")
         .with_confirm_label("dialog-ok")
         .with_cancel_label("dialog-back")
-        .build(commands.reborrow(), dialog_default_action);
 }
 
-fn warn_no_load(mut commands: Commands, font: Handle<Font>) {
-    DialogBuilder::new(font)
+fn warn_no_load() -> Dialog {
+    Dialog::new()
         .with_title("load-error-title")
         .with_text_body("load-error-body")
         .with_confirm_label("dialog-ok")
         .with_cancel_label("dialog-back")
-        .build(commands.reborrow(), dialog_default_action);
 }
 
 pub fn open_load_game_popup(mut commands: Commands, font: Handle<Font>) {
     let mut v = match scan_saved_games() {
         Err(e) => {
             error!("Could not scan saved games: {e}");
-            warn_no_load_scan(commands.reborrow(), font);
+            warn_no_load_scan();
             return;
         }
         Ok(v) => v,
@@ -74,9 +71,8 @@ pub fn open_load_game_popup(mut commands: Commands, font: Handle<Font>) {
                 text_font.clone(),
             ));
     }
-    DialogBuilder::new(font)
+    Dialog::new()
         .with_title("load-game-title")
         .with_entity_body(body)
-        .with_cancel_label("dialog-back")
-        .build(commands.reborrow(), dialog_default_action);
+        .with_cancel_label("dialog-back");
 }

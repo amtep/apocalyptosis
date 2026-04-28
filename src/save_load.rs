@@ -115,7 +115,6 @@ fn save_inner(
 fn save(
     mut commands: Commands,
     campaign: Option<Res<Campaign>>,
-    font: Res<FontHandle>,
     cult_name: Res<CultName>,
     cult_symbol: Res<CultSymbol>,
     game_date: Res<GameDate>,
@@ -133,7 +132,7 @@ fn save(
             }
             Err(e) => {
                 error!("Save error! could not determine campaign index: {e}");
-                warn_no_save(commands.reborrow(), font.0.clone());
+                warn_no_save();
                 return;
             }
         }
@@ -149,7 +148,7 @@ fn save(
     };
     if let Err(e) = save_inner(commands.reborrow(), index, metadata) {
         error!("Save error! {e}");
-        warn_no_save(commands.reborrow(), font.0.clone());
+        warn_no_save();
     }
 }
 
@@ -158,7 +157,6 @@ fn autosave(
     time: Res<Time<Real>>,
     mut timer: ResMut<AutosaveTimer>,
     campaign: Option<Res<Campaign>>,
-    font: Res<FontHandle>,
     cult_name: Res<CultName>,
     cult_symbol: Res<CultSymbol>,
     game_date: Res<GameDate>,
@@ -170,7 +168,6 @@ fn autosave(
         save(
             commands.reborrow(),
             campaign,
-            font,
             cult_name,
             cult_symbol,
             game_date,
@@ -185,7 +182,6 @@ fn listen_save_keys(
     mut commands: Commands,
     keys: Res<ButtonInput<KeyCode>>,
     campaign: Option<Res<Campaign>>,
-    font: Res<FontHandle>,
     cult_name: Res<CultName>,
     cult_symbol: Res<CultSymbol>,
     game_date: Res<GameDate>,
@@ -197,7 +193,6 @@ fn listen_save_keys(
         save(
             commands.reborrow(),
             campaign,
-            font,
             cult_name,
             cult_symbol,
             game_date,
