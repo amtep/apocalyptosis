@@ -77,6 +77,9 @@ pub fn plugin(app: &mut App) {
 }
 
 #[derive(Component)]
+pub struct Selected;
+
+#[derive(Component)]
 #[relationship(relationship_target = Views)]
 struct ViewOf(Entity);
 

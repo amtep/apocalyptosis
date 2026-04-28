@@ -42,7 +42,7 @@ pub enum MainSetupSet {
 struct LoadHandle(Handle<LoadedFolder>);
 
 fn load_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    info!("Entered load game state");
+    info!("Entered asset load state");
     commands.insert_resource(LoadHandle(asset_server.load_folder(".")));
     commands.spawn(Camera2d);
     commands.spawn((
@@ -63,7 +63,7 @@ fn load_update(
     mut next_state: ResMut<NextState<GameState>>,
 ) {
     if asset_server.is_loaded_with_dependencies(load_handle.0.id()) {
-        info!("Exiting load game state");
+        info!("Exiting asset load state");
         commands.remove_resource::<LoadHandle>();
         next_state.set(GameState::MainMenu);
     }

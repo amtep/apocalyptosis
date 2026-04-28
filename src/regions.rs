@@ -6,6 +6,7 @@ use moonshine_save::save::Save;
 use serde::Deserialize;
 
 use crate::{
+    main_menu::NewGame,
     state::{GameState, MainSetupSet},
     suspicion::{MediaSuspicion, PoliceSuspicion},
     text::TextKey,
@@ -19,7 +20,9 @@ pub fn plugin(app: &mut App) {
         .add_systems(OnExit(GameState::Load), cleanup_load)
         .add_systems(
             OnEnter(GameState::Main),
-            setup_main.in_set(MainSetupSet::Regions),
+            setup_main
+                .run_if(resource_exists::<NewGame>)
+                .in_set(MainSetupSet::Regions),
         )
         .add_systems(FixedUpdate, reload.run_if(not(in_state(GameState::Load))));
 }

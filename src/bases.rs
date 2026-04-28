@@ -8,7 +8,7 @@ use serde_derive::Deserialize;
 
 use crate::{
     funds::{Expense, ExpenseCategory, FundsAmount},
-    main_menu::NewGame,
+    main_menu::{LoadedGame, NewGame},
     regions::BasePlot,
     rng::RandomSource,
     state::{GameState, MainSetupSet},
@@ -21,8 +21,10 @@ pub fn plugin(app: &mut App) {
         .add_systems(OnEnter(GameState::Load), setup_load)
         .add_systems(
             OnEnter(GameState::Main),
-            new_game
-                .run_if(resource_exists::<NewGame>)
+            (
+                new_game.run_if(resource_exists::<NewGame>),
+                loaded_game.run_if(resource_exists::<LoadedGame>),
+            )
                 .in_set(MainSetupSet::Bases),
         );
 }
@@ -83,4 +85,12 @@ fn new_game(
         },
         Expense(apartment.1.cost_per_day, ExpenseCategory::Bases),
     ));
+}
+
+fn loaded_game(mut commands: Commands, bases: Query<Entity, With<Base>>) {
+    for base in bases {
+        // Remove and re-insert the Base in order to trigger the Add observer
+        // that builds the base UI.
+        commands.entity(base).remove::<Base>().insert(Base);
+    }
 }

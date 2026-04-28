@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use chrono::{Days, NaiveDate};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::state::{GameState, MainSetupSet};
 
@@ -16,9 +16,10 @@ pub fn plugin(app: &mut App) {
     .add_systems(Update, listen_speed_keys.run_if(in_state(GameState::Main)));
 }
 
-#[derive(Resource, Clone, Reflect, Serialize)]
+#[derive(Resource, Clone, Reflect, Serialize, Deserialize)]
 #[reflect(Resource)]
 #[reflect(Serialize)]
+#[reflect(Deserialize)]
 #[reflect(opaque)]
 pub struct GameDate(pub NaiveDate);
 

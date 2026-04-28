@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
 pub struct CultName(pub String);
 
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
 pub struct CultSymbol(pub char);

@@ -1,13 +1,16 @@
 use std::{
     fs::{File, create_dir_all, read_dir},
-    io::Write,
+    io::{Cursor, Write},
     path::PathBuf,
 };
 
 use bevy::prelude::*;
 use chrono::{DateTime, NaiveDate, Utc};
 use directories::ProjectDirs;
-use moonshine_save::save::{SaveWorld, TriggerSave, save_on_default_event};
+use moonshine_save::{
+    load::{LoadWorld, TriggerLoad, load_on_default_event},
+    save::{SaveWorld, TriggerSave, save_on_default_event},
+};
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -24,7 +27,7 @@ use crate::{
     state::GameState,
     suspicion::{IntelligenceSuspicion, ScientificSuspicion},
     time::GameDate,
-    ui::{FontHandle, save_load::warn_no_save},
+    ui::save_load::warn_no_save,
 };
 
 const SEPARATOR: &[u8] = b"\n\nAPOCALYPTOSIS\n";
@@ -38,7 +41,8 @@ pub fn plugin(app: &mut App) {
         AUTOSAVE_INTERVAL,
         TimerMode::Repeating,
     )))
-    .add_observer(save_on_default_event);
+    .add_observer(save_on_default_event)
+    .add_observer(load_on_default_event);
 }
 
 #[derive(Serialize, Deserialize)]
@@ -52,7 +56,7 @@ pub struct SaveMetadata {
     pub funds: FundsAmount,
 }
 
-#[derive(Resource, Deref)]
+#[derive(Resource, Deref, Clone, Copy)]
 pub struct Campaign(usize);
 
 #[derive(Resource, Deref, DerefMut)]
@@ -102,6 +106,8 @@ fn save_inner(
             .map_err(|e| SaveLoadError::WriteSaveError(path.clone(), e))?;
         let event = SaveWorld::default_into_stream(file)
             .include_resource::<Funds>()
+            .include_resource::<CultName>()
+            .include_resource::<CultSymbol>()
             .include_resource::<IntelligenceSuspicion>()
             .include_resource::<ScientificSuspicion>()
             .include_resource::<GameDate>();
@@ -201,6 +207,11 @@ fn listen_save_keys(
             funds,
         );
     }
+}
+
+pub fn load(mut commands: Commands, campaign: Campaign, content: Vec<u8>) {
+    commands.trigger_load(LoadWorld::default_from_stream(Cursor::new(content)));
+    commands.insert_resource(campaign);
 }
 
 /// Examine the savefile filenames to find a new number to save under.

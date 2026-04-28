@@ -9,7 +9,7 @@ use serde::Deserialize;
 use crate::{
     bases::Base,
     funds::{Expense, ExpenseCategory, FundsAmount},
-    main_menu::NewGame,
+    main_menu::{LoadedGame, NewGame},
     rng::RandomSource,
     state::{GameState, MainSetupSet},
 };
@@ -21,8 +21,10 @@ pub fn plugin(app: &mut App) {
         .add_systems(OnEnter(GameState::Load), setup_load)
         .add_systems(
             OnEnter(GameState::Main),
-            new_game
-                .run_if(resource_exists::<NewGame>)
+            (
+                new_game.run_if(resource_exists::<NewGame>),
+                loaded_game.run_if(resource_exists::<LoadedGame>),
+            )
                 .in_set(MainSetupSet::Followers),
         );
 }
@@ -83,4 +85,15 @@ fn new_game(
     commands
         .spawn((ChildOf(base), Expense(cost, ExpenseCategory::Followers)))
         .insert(Follower::Priest);
+}
+
+fn loaded_game(mut commands: Commands, followers: Query<(Entity, &Follower)>) {
+    for (entity, follower) in followers {
+        // Remove and re-insert the Follower component in order to trigger the
+        // Add observer that builds the base UI.
+        commands
+            .entity(entity)
+            .remove::<Follower>()
+            .insert(*follower);
+    }
 }

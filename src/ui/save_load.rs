@@ -2,10 +2,18 @@ use bevy::prelude::*;
 
 use crate::{
     constants::ui::{BORDER, NORMAL},
-    save_load::scan_saved_games,
+    main_menu::LoadedGame,
+    save_load::{Campaign, load, scan_saved_games},
+    state::GameState,
     text::TextKey,
-    ui::dialog::Dialog,
+    ui::{
+        Selected,
+        dialog::{Dialog, DialogConfirmed},
+    },
 };
+
+#[derive(Component)]
+struct LoadGameOption(Campaign, Vec<u8>);
 
 pub fn warn_no_save() -> Dialog {
     Dialog::new()
@@ -54,13 +62,29 @@ pub fn open_load_game_popup(mut commands: Commands, font: Handle<Font>) {
     for (campaign, metadata, content) in v {
         commands
             .spawn((
+                Button,
                 Node {
                     border: UiRect::all(px(2)),
                     ..default()
                 },
                 BorderColor::all(BORDER),
                 ChildOf(body),
+                LoadGameOption(campaign, content),
             ))
+            .observe(
+                |click: On<Pointer<Click>>,
+                 mut commands: Commands,
+                 mut q: Query<(Entity, &mut Node), With<LoadGameOption>>| {
+                    if click.button == PointerButton::Primary {
+                        for (e, mut node) in &mut q {
+                            commands.entity(e).remove::<Selected>();
+                            node.border = UiRect::all(px(2));
+                        }
+                        commands.entity(click.entity).insert(Selected);
+                        q.get_mut(click.entity).unwrap().1.border = UiRect::all(px(4));
+                    }
+                },
+            )
             .with_child((Text(format!("{}", *campaign)), text_font.clone()))
             .with_child(Node {
                 flex_grow: 1.0,
@@ -71,8 +95,26 @@ pub fn open_load_game_popup(mut commands: Commands, font: Handle<Font>) {
                 text_font.clone(),
             ));
     }
-    Dialog::new()
-        .with_title("load-game-title")
-        .with_entity_body(body)
-        .with_cancel_label("dialog-back");
+    commands
+        .spawn(
+            Dialog::new()
+                .with_title("load-game-title")
+                .with_entity_body(body)
+                .with_confirm_label("load-game-confirm")
+                .with_cancel_label("dialog-back"),
+        )
+        .observe(
+            |_: On<Add, DialogConfirmed>,
+             mut commands: Commands,
+             option: Single<&LoadGameOption, With<Selected>>,
+             mut next_state: ResMut<NextState<GameState>>| {
+                let LoadGameOption(campaign, content) = *option;
+                // Set the next state early, so that it can be set back to MainMenu
+                // if the load fails. It won't take effect till the next frame anyway.
+                next_state.set(GameState::Main);
+                info!("Loading game {}", **campaign);
+                load(commands.reborrow(), *campaign, content.clone());
+                commands.insert_resource(LoadedGame);
+            },
+        );
 }
