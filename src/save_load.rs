@@ -1,6 +1,6 @@
 use std::{
     ffi::OsString,
-    fs::{File, create_dir_all, read_dir},
+    fs::{File, create_dir_all, read_dir, rename},
     io::{Cursor, Write},
     path::PathBuf,
 };
@@ -78,6 +78,8 @@ pub enum SaveLoadError {
     CreateSaveError(PathBuf, std::io::Error),
     #[error("could not write save file {0}: {1}")]
     WriteSaveError(PathBuf, std::io::Error),
+    #[error("could not move save file into place {0}: {1}")]
+    RenameError(PathBuf, std::io::Error),
     #[error("could not read save file {0}: {1}")]
     ReadSaveError(PathBuf, std::io::Error),
 }
@@ -96,16 +98,19 @@ fn save_inner(
             .data_dir()
             .join(format!("saves/{index}.apocalyptosis.{EXTENSION}"));
         info!("Saving to {}", path.display());
-        let mut file =
-            File::create(&path).map_err(|e| SaveLoadError::CreateSaveError(path.clone(), e))?;
+        let temp_path = pd
+            .data_dir()
+            .join(format!("saves/{index}.apocalyptosis.{EXTENSION}.new"));
+        let mut file = File::create(&temp_path)
+            .map_err(|e| SaveLoadError::CreateSaveError(temp_path.clone(), e))?;
         file.write_all(
             ron::ser::to_string_pretty(&metadata, PrettyConfig::default())
                 .unwrap()
                 .as_bytes(),
         )
-        .map_err(|e| SaveLoadError::WriteSaveError(path.clone(), e))?;
+        .map_err(|e| SaveLoadError::WriteSaveError(temp_path.clone(), e))?;
         file.write_all(SEPARATOR)
-            .map_err(|e| SaveLoadError::WriteSaveError(path.clone(), e))?;
+            .map_err(|e| SaveLoadError::WriteSaveError(temp_path.clone(), e))?;
         let event = SaveWorld::default_into_stream(file)
             .include_resource::<Funds>()
             .include_resource::<CultName>()
@@ -114,6 +119,8 @@ fn save_inner(
             .include_resource::<ScientificSuspicion>()
             .include_resource::<GameDate>();
         commands.trigger_save(event);
+        // TODO: only do this if the save succeeded
+        rename(temp_path, &path).map_err(|e| SaveLoadError::RenameError(path.clone(), e))?;
         Ok(())
     } else {
         Err(SaveLoadError::ProjectDirFailed)
