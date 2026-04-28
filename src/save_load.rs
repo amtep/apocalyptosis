@@ -14,6 +14,7 @@ use thiserror::Error;
 
 use crate::{
     bases::Base,
+    common::{CultName, CultSymbol},
     constants::{
         AUTOSAVE_INTERVAL,
         files::{PROJECT_DIR_APPLICATION, PROJECT_DIR_ORGANIZATION, PROJECT_DIR_QUALIFIER},
@@ -23,11 +24,7 @@ use crate::{
     state::GameState,
     suspicion::{IntelligenceSuspicion, ScientificSuspicion},
     time::GameDate,
-    ui::{
-        FontHandle,
-        main_menu::{CultName, CultSymbol},
-        save_load::warn_no_save,
-    },
+    ui::{FontHandle, save_load::warn_no_save},
 };
 
 const SEPARATOR: &[u8] = b"\n\nAPOCALYPTOSIS\n";

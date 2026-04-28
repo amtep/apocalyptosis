@@ -8,6 +8,7 @@ use strum::IntoEnumIterator;
 
 use crate::{
     bases::{Base, Basetype},
+    common::{CultName, CultSymbol},
     constants::ui::*,
     followers::Follower,
     funds::{Expense, ExpenseCategory, Funds, FundsAmount, Income, IncomeCategory},
@@ -16,15 +17,13 @@ use crate::{
     suspicion::{IntelligenceSuspicion, MediaSuspicion, PoliceSuspicion, ScientificSuspicion},
     text::TextKey,
     time::{CurrentGameSpeed, GameDate, GameSpeed, GameSpeedAction, GameSpeedChangedEvent},
-    ui::{
-        buttons::setup_observe_buttons,
-        main_menu::{CultName, CultSymbol, setup_main_menu},
-    },
+    ui::{buttons::setup_observe_buttons, main_menu::setup_main_menu},
 };
 
 mod buttons;
 mod dialog;
-pub mod main_menu;
+mod main_menu;
+mod menu;
 pub mod save_load;
 
 pub fn plugin(app: &mut App) {

@@ -2,6 +2,7 @@ use bevy::{prelude::*, ui::InteractionDisabled};
 use bevy_ui_text_input::{TextInputBuffer, TextInputMode, TextInputNode, TextInputPrompt};
 
 use crate::{
+    common::{CultName, CultSymbol},
     constants::ui::*,
     main_menu::NewGame,
     state::GameState,
@@ -12,12 +13,6 @@ use crate::{
         save_load::open_load_game_popup,
     },
 };
-
-#[derive(Resource)]
-pub struct CultName(pub String);
-
-#[derive(Resource)]
-pub struct CultSymbol(pub char);
 
 #[derive(Component)]
 struct CultSym(char);
@@ -162,7 +157,7 @@ pub fn setup_main_menu(
                                         margin: UiRect::all(px(10.0)),
                                         ..default()
                                     }).with_children(|parent| {
-                                        for symbol in ['✭', '✥', '✯', '❂', '♔', '♛', '♁', '⚜'] {
+                                        for symbol in ['✭', '✥', '✯', '❂', '♔', '♛', '❤', '⚜'] {
                                             parent.spawn((
                                                 Node {
                                                     width: px(120),
