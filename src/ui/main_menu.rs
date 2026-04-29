@@ -41,7 +41,7 @@ pub fn setup_main_menu(
                 ..default()
             },
             BorderColor::all(WHITE),
-            BackgroundColor::from(MENU_BACKGROUND),
+            BackgroundColor::from(BUTTON_BACKGROUND),
             children![(
                 TextFont::from_font_size(48.0).with_font(font_handle.0.clone()),
                 TextKey::new(key),
@@ -170,7 +170,7 @@ pub fn setup_main_menu(
                                                 },
                                                 Button,
                                                 BorderColor::all(BORDER),
-                                                BackgroundColor::from(MENU_BACKGROUND),
+                                                BackgroundColor::from(BUTTON_BACKGROUND),
                                                 children![
                                                     (
                                                         Text::new(symbol),

@@ -4,6 +4,8 @@ use crate::{
     constants::ui::*,
     regions::{BasePlot, Location, Region},
     suspicion::{MediaSuspicion, PoliceSuspicion},
+    text::TextKey,
+    ui::menu::{Menu, MenuEntry, MenuItem},
 };
 
 use super::{
@@ -60,6 +62,7 @@ pub fn setup(
             ))
             .observe(on_label_over)
             .observe(on_label_out)
+            .observe(on_region_click)
             .with_children(|parent| {
                 parent.spawn((
                     region.get_text_key(),
@@ -139,6 +142,21 @@ fn on_location_reloaded(
             node.top = percent(location.y);
         }
     }
+}
+
+fn on_region_click(click: On<Pointer<Click>>, mut commands: Commands) {
+    let entry = MenuEntry::new("dialog-confirm").with_items_iter(std::iter::repeat_n(
+        MenuItem {
+            enabled: true,
+            text: TextKey::new("region-north-america"),
+            description: TextKey::new("region-north-america"),
+        },
+        5,
+    ));
+
+    commands
+        .entity(click.entity)
+        .with_child(Menu::new().with_entries_iter(std::iter::repeat_n(entry, 3)));
 }
 
 pub fn update_regional_suspicion(

@@ -21,6 +21,7 @@ use crate::{
         buttons::setup_observe_buttons,
         dialog::setup_observe_dialogs,
         main_menu::setup_main_menu,
+        menu::setup_observe_menus,
         regions::{BasePlotUi, RegionSuspicionUi},
     },
 };
@@ -36,8 +37,14 @@ pub fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Load), setup_fonts)
         .init_resource::<UiScale>()
         .init_resource::<InputFocus>()
-        .add_systems(OnExit(GameState::Load), setup_observe_buttons)
-        .add_systems(OnExit(GameState::Load), setup_observe_dialogs)
+        .add_systems(
+            OnExit(GameState::Load),
+            (
+                setup_observe_buttons,
+                setup_observe_dialogs,
+                setup_observe_menus,
+            ),
+        )
         .add_systems(Update, read_window_resized_messages)
         .add_systems(OnEnter(GameState::MainMenu), setup_main_menu)
         .add_systems(
@@ -169,7 +176,7 @@ fn setup_map(
                 ..default()
             },
             BorderColor::all(BORDER_HIGHLIGHT),
-            BackgroundColor::from(MENU_BACKGROUND),
+            BackgroundColor::from(BUTTON_BACKGROUND),
             Visibility::Hidden,
             ZIndex(1),
         ))
@@ -199,7 +206,7 @@ fn setup_map(
                         ..default()
                     },
                     BorderColor::all(BORDER),
-                    BackgroundColor::from(MENU_BACKGROUND),
+                    BackgroundColor::from(BUTTON_BACKGROUND),
                 ))
                 .with_children(|parent| {
                     // Cult symbol
@@ -423,7 +430,7 @@ fn on_spawn_base(
                 ..default()
             },
             BorderColor::all(WHITE),
-            BackgroundColor::from(MENU_BACKGROUND.with_alpha(0.75)),
+            BackgroundColor::from(BUTTON_BACKGROUND.with_alpha(0.75)),
         ))
         .observe(on_label_over)
         .observe(on_label_out)

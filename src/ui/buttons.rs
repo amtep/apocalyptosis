@@ -1,6 +1,9 @@
 use bevy::{input_focus::InputFocus, prelude::*, ui::InteractionDisabled};
 
-use crate::constants::ui::*;
+use crate::{
+    constants::ui::*,
+    ui::{MapUi, menu::Menu},
+};
 
 pub fn setup_observe_buttons(mut commands: Commands) {
     commands.add_observer(
@@ -18,7 +21,7 @@ pub fn setup_observe_buttons(mut commands: Commands) {
                 buttons.get_mut(over.entity)
                 && !has_interaction_disabled
             {
-                background.0 = MENU_HOVER_BACKGROUND.into();
+                background.0 = BUTTON_HOVER_BACKGROUND.into();
                 if let Some(mut border) = border {
                     border.set_all(BORDER_HIGHLIGHT);
                 }
@@ -41,7 +44,7 @@ pub fn setup_observe_buttons(mut commands: Commands) {
                 buttons.get_mut(out.entity)
                 && !has_interaction_disabled
             {
-                background.0 = MENU_BACKGROUND.into();
+                background.0 = BUTTON_BACKGROUND.into();
                 if let Some(mut border) = border {
                     border.set_all(BORDER);
                 }
@@ -55,7 +58,7 @@ pub fn setup_observe_buttons(mut commands: Commands) {
                 && let Ok((mut background, has_interaction_disabled)) = buttons.get_mut(press.entity)
                 && !has_interaction_disabled
             {
-                background.0 = MENU_PRESSED_BACKGROUND.into();
+                background.0 = BUTTON_PRESSED_BACKGROUND.into();
             }
         },
     );
@@ -65,7 +68,7 @@ pub fn setup_observe_buttons(mut commands: Commands) {
                 && let Ok((mut background, mut button, has_interaction_disabled)) = buttons.get_mut(click.entity)
                 && !has_interaction_disabled
             {
-                background.0 = MENU_HOVER_BACKGROUND.into();
+                background.0 = BUTTON_HOVER_BACKGROUND.into();
                 button.set_changed();
             }
         },
@@ -79,7 +82,7 @@ pub fn setup_observe_buttons(mut commands: Commands) {
         >,
          mut text_colors: Query<&mut TextColor>| {
             if let Ok((children, mut backgroun_color, border_color)) = buttons.get_mut(add.entity) {
-                backgroun_color.0 = MENU_BACKGROUND.into();
+                backgroun_color.0 = BUTTON_BACKGROUND.into();
                 if let Some(mut border_color) = border_color {
                     border_color.set_all(BORDER);
                 }
@@ -102,7 +105,7 @@ pub fn setup_observe_buttons(mut commands: Commands) {
             if let Ok((children, mut backgroun_color, border_color)) =
                 buttons.get_mut(remove.entity)
             {
-                backgroun_color.0 = MENU_BACKGROUND.into();
+                backgroun_color.0 = BUTTON_BACKGROUND.into();
                 if let Some(mut border_color) = border_color {
                     border_color.set_all(BORDER);
                 }
@@ -110,6 +113,20 @@ pub fn setup_observe_buttons(mut commands: Commands) {
                     if let Ok(mut text_color) = text_colors.get_mut(*child) {
                         text_color.0 = TEXT.into();
                     }
+                }
+            }
+        },
+    );
+
+    // click outside any menu should close all opened menus
+    commands.add_observer(
+        |click: On<Pointer<Click>>,
+         mut commands: Commands,
+         map_ui: Query<&MapUi>,
+         menus: Query<Entity, With<Menu>>| {
+            if map_ui.contains(click.entity) {
+                for menu in &menus {
+                    commands.entity(menu).try_despawn();
                 }
             }
         },

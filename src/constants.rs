@@ -37,11 +37,13 @@ pub mod ui {
     pub const RED: Srgba = Srgba::rgb(1.00, 0.384, 0.384);
     pub const BLUE: Srgba = Srgba::rgb(0.384, 0.384, 1.00);
 
-    pub const MENU_BACKGROUND: Srgba = THEME_DARK_PURPLE;
-    pub const MENU_HOVER_BACKGROUND: Srgba = THEME_INDIGO;
-    pub const MENU_PRESSED_BACKGROUND: Srgba = BLACK;
+    pub const BUTTON_BACKGROUND: Srgba = THEME_DARK_PURPLE;
+    pub const BUTTON_HOVER_BACKGROUND: Srgba = THEME_INDIGO;
+    pub const BUTTON_PRESSED_BACKGROUND: Srgba = BLACK;
 
     pub const DIALOG_BACKGROUND: Srgba = THEME_DARK_PURPLE;
+
+    pub const MENU_BACKGROUND: Srgba = THEME_DARK_PURPLE;
 
     pub const TEXT: Srgba = WHITE;
     pub const BORDER: Srgba = WHITE;
@@ -56,8 +58,11 @@ pub mod ui {
     pub const HEADING: f32 = 24.0;
     pub const SUB_HEADING: f32 = 20.0;
     pub const LARGE: f32 = 16.0;
-    pub const NORMAL: f32 = 14.0;
-    pub const SMALL: f32 = 12.0;
+    pub const NORMAL: f32 = 13.0;
+    pub const SMALL: f32 = 10.0;
 
     pub const ICON_PAUSE: &str = "textures/pause.png";
+
+    pub const ZINDEX_MENU: i32 = 50;
+    pub const ZINDEX_DIALOG: i32 = 100;
 }

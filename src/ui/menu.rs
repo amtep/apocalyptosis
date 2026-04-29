@@ -1,1 +1,203 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, ui::InteractionDisabled};
+
+use crate::{constants::ui::*, text::TextKey, ui::FontHandle};
+
+#[derive(Clone)]
+pub struct MenuItem {
+    pub enabled: bool,
+    pub text: TextKey,
+    pub description: TextKey,
+}
+
+#[derive(Clone)]
+pub struct MenuEntry {
+    heading: TextKey,
+    items: Vec<MenuItem>,
+}
+
+impl MenuEntry {
+    pub fn new(heading: impl Into<TextKey>) -> Self {
+        Self {
+            heading: heading.into(),
+            items: Vec::new(),
+        }
+    }
+
+    pub fn with_item(mut self, item: MenuItem) -> Self {
+        self.items.push(item);
+        self
+    }
+
+    pub fn with_items_iter<I: IntoIterator<Item = MenuItem>>(mut self, items: I) -> Self {
+        self.items.extend(items);
+        self
+    }
+
+    pub fn with_items(mut self, items: &[MenuItem]) -> Self {
+        self.items.extend_from_slice(items);
+        self
+    }
+}
+
+#[derive(Component, Default, Clone)]
+pub struct Menu {
+    entries: Vec<MenuEntry>,
+}
+
+impl Menu {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_entry(mut self, entry: MenuEntry) -> Self {
+        self.entries.push(entry);
+        self
+    }
+
+    pub fn with_entries_iter<I: IntoIterator<Item = MenuEntry>>(mut self, entries: I) -> Self {
+        self.entries.extend(entries);
+        self
+    }
+
+    pub fn with_entries(mut self, entries: &[MenuEntry]) -> Self {
+        self.entries.extend_from_slice(entries);
+        self
+    }
+}
+
+#[derive(Component)]
+struct MenuRootUi;
+
+#[derive(Component)]
+struct MenuHeadingUi;
+
+#[derive(Component)]
+struct MenuItemUi;
+
+#[derive(Component)]
+struct MenuClicked {
+    heading: String,
+    item: String,
+}
+
+pub fn setup_observe_menus(mut commands: Commands) {
+    commands.add_observer(on_menu_add);
+}
+
+fn on_menu_add(
+    add: On<Add, Menu>,
+    mut commands: Commands,
+    menus: Query<&Menu>,
+    font_handle: Res<FontHandle>,
+) {
+    let menu_entity = add.entity;
+    let menu = menus.get(menu_entity).unwrap().clone();
+    let font = font_handle.0.clone();
+
+    let mut entity_commands = commands.entity(menu_entity);
+
+    entity_commands.insert((
+        MenuRootUi,
+        Node {
+            top: percent(100),
+            left: px(10),
+            min_width: px(100),
+            height: auto(),
+            position_type: PositionType::Absolute,
+            flex_direction: FlexDirection::Column,
+            margin: UiRect::top(px(5)),
+            border: UiRect::all(px(1)),
+            border_radius: BorderRadius::all(px(2)),
+            ..default()
+        },
+        BackgroundColor::from(MENU_BACKGROUND),
+        BorderColor::all(BORDER_HIGHLIGHT),
+        GlobalZIndex(ZINDEX_MENU),
+    ));
+
+    let hrule = (
+        Node {
+            width: auto(),
+            height: px(1),
+            align_self: AlignSelf::Center,
+            margin: UiRect::right(px(2)),
+            flex_grow: 1.0,
+            ..default()
+        },
+        BackgroundColor::from(BORDER_HIGHLIGHT),
+    );
+
+    entity_commands
+        .with_children(move |parent| {
+            for entry in menu.entries {
+                parent
+                    .spawn((
+                        Node {
+                            width: auto(),
+                            height: auto(),
+                            padding: UiRect::axes(px(5), px(2)),
+                            flex_direction: FlexDirection::Row,
+                            ..default()
+                        },
+                        MenuHeadingUi,
+                    ))
+                    .with_children(|parent| {
+                        parent.spawn(hrule.clone());
+                        parent.spawn((
+                            entry.heading.clone(),
+                            TextColor::from(TEXT_HIGHLIGHT),
+                            TextFont::from_font_size(SMALL).with_font(font.clone()),
+                        ));
+                    });
+
+                parent
+                    .spawn(Node {
+                        width: auto(),
+                        height: auto(),
+                        flex_direction: FlexDirection::Column,
+                        ..default()
+                    })
+                    .with_children(|parent| {
+                        for item in entry.items {
+                            let mut cmd = parent.spawn((
+                                MenuItemUi,
+                                Button,
+                                Node {
+                                    padding: UiRect::axes(px(5), px(2)),
+                                    ..default()
+                                },
+                            ));
+
+                            if !item.enabled {
+                                cmd.insert(InteractionDisabled);
+                            }
+
+                            let heading = entry.heading.0.clone();
+
+                            cmd.with_child((
+                            item.text.clone(),
+                            TextColor::from(TEXT),
+                            TextFont::from_font_size(SMALL).with_font(font.clone()),
+                        )).observe(move |mut click: On<Pointer<Click>>,
+                              mut commands: Commands,
+                              has_disableds: Query<Has<InteractionDisabled>>| {
+                                    if !has_disableds.get(click.entity).unwrap() {
+                                        commands.entity(menu_entity).insert(MenuClicked {
+                                            heading: heading.clone(),
+                                            item: item.text.0.clone()
+                                        });
+                                        commands.entity(menu_entity).despawn();
+                                    }
+                                    click.propagate(false);
+                              });
+                        }
+                    });
+            }
+        })
+        .observe(|mut over: On<Pointer<Over>>| {
+            over.propagate(false);
+        })
+        .observe(|mut out: On<Pointer<Out>>| {
+            out.propagate(false);
+        });
+}

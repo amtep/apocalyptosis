@@ -168,7 +168,7 @@ fn on_dialog_add(
         },
         BorderColor::all(BORDER_HIGHLIGHT),
         BackgroundColor::from(DIALOG_BACKGROUND),
-        ZIndex(1),
+        GlobalZIndex(ZINDEX_DIALOG),
     ));
 
     let dialog_root = entity_commands.id();
@@ -256,7 +256,7 @@ fn on_dialog_add(
                             ..Default::default()
                         },
                         BorderColor::all(BORDER),
-                        BackgroundColor::from(MENU_BACKGROUND),
+                        BackgroundColor::from(BUTTON_BACKGROUND),
                         Button,
                         children![(
                             text_key,
@@ -298,6 +298,7 @@ fn on_dialog_add(
                           has_disableds: Query<Has<InteractionDisabled>>| {
                         if !has_disableds.get(click.entity).unwrap() {
                             commands.entity(dialog_entity).insert(DialogConfirmed);
+                            commands.entity(dialog_entity).despawn();
                             commands.entity(dialog_background).despawn();
                             if dialog.pause {
                                 commands
