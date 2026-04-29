@@ -1,16 +1,20 @@
 use bevy::prelude::*;
 
 use crate::{
+    bases::Base,
     constants::ui::*,
+    followers::Follower,
     regions::{BasePlot, Location, Region},
     suspicion::{MediaSuspicion, PoliceSuspicion},
     text::TextKey,
-    ui::menu::{Menu, MenuEntry, MenuItem},
+    ui::{
+        BaseUi, FollowerList, UnicodeFontHandle,
+        menu::{Menu, MenuEntry},
+    },
 };
 
 use super::{
-    DisplayFontHandle, FontHandle, MapUi, MeterDisplay, ViewOf, Views, on_changed_follower,
-    on_label_out, on_label_over, on_spawn_base,
+    DisplayFontHandle, FontHandle, MapUi, MeterDisplay, ViewOf, Views, on_label_out, on_label_over,
 };
 
 #[derive(Component)]
@@ -145,18 +149,125 @@ fn on_location_reloaded(
 }
 
 fn on_region_click(click: On<Pointer<Click>>, mut commands: Commands) {
-    let entry = MenuEntry::new("dialog-confirm").with_items_iter(std::iter::repeat_n(
-        MenuItem {
-            enabled: true,
-            text: TextKey::new("region-north-america"),
-            description: TextKey::new("region-north-america"),
-        },
-        5,
-    ));
+    let entry = MenuEntry::new("menu-region-bases").with_items_iter(std::iter::empty());
 
     commands
         .entity(click.entity)
-        .with_child(Menu::new().with_entries_iter(std::iter::repeat_n(entry, 3)));
+        .with_child(Menu::new().with_entry(entry));
+}
+
+fn on_spawn_base(
+    event: On<Insert, Base>,
+    mut commands: Commands,
+    bases: Query<(&ChildOf, &Base)>,
+    base_plots: Query<(&ChildOf, &Views), With<BasePlot>>,
+    regions: Query<&Views, With<Region>>,
+    mut region_suspicion_uis: Query<&mut Node, With<RegionSuspicionUi>>,
+    base_plot_uis: Query<&BasePlotUi>,
+    font_handle: Res<FontHandle>,
+) {
+    let (base_plot, base_type) = bases.get(event.entity).unwrap();
+    let (region, base_plot_views) = base_plots.get(base_plot.0).unwrap();
+    let region_views = regions.get(region.0).unwrap();
+    let mut region_suspicion_ui_node = region_views
+        .iter()
+        .find(|view| region_suspicion_uis.contains(*view))
+        .map(|view| region_suspicion_uis.get_mut(view).unwrap())
+        .unwrap();
+
+    if region_suspicion_ui_node.display == Display::None {
+        region_suspicion_ui_node.display = Display::Flex;
+    }
+
+    let base_plot_ui = base_plot_views
+        .iter()
+        .find(|view| base_plot_uis.contains(*view))
+        .unwrap();
+
+    commands
+        .spawn((
+            ChildOf(base_plot_ui),
+            ViewOf(event.entity),
+            BaseUi,
+            Node {
+                flex_direction: FlexDirection::Column,
+                border: UiRect::all(px(1)),
+                border_radius: BorderRadius::all(px(5)),
+                padding: UiRect::horizontal(px(2)),
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BorderColor::all(WHITE),
+            BackgroundColor::from(BUTTON_BACKGROUND.with_alpha(0.75)),
+        ))
+        .observe(on_label_over)
+        .observe(on_label_out)
+        .with_children(|parent| {
+            parent.spawn((
+                TextKey::new(format!("basetype-{}", base_type.0)),
+                TextFont::from_font_size(NORMAL).with_font(font_handle.0.clone()),
+            ));
+            parent.spawn((
+                FollowerList,
+                Node {
+                    flex_direction: FlexDirection::Row,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+            ));
+        });
+}
+
+fn on_changed_follower<E: EntityEvent>(
+    event: On<E, Follower>,
+    mut commands: Commands,
+    parents: Query<&ChildOf>,
+    children: Query<&Children>,
+    followers: Query<&Follower>,
+    base_views: Query<&Views, With<Base>>,
+    base_uis: Query<&BaseUi>,
+    follower_lists: Query<&FollowerList>,
+    unicode_font_handle: Res<UnicodeFontHandle>,
+) {
+    let base = parents.get(event.event_target()).unwrap().0;
+    let base_views = base_views.get(base).unwrap();
+    let base_ui = base_views
+        .iter()
+        .find(|view| base_uis.contains(*view))
+        .unwrap();
+    let follower_list = children
+        .get(base_ui)
+        .unwrap()
+        .iter()
+        .find(|fl| follower_lists.contains(*fl))
+        .unwrap();
+
+    commands.entity(follower_list).despawn_children();
+
+    let mut followers: Vec<Follower> = children
+        .get(base)
+        .unwrap()
+        .iter()
+        .map(|follower| *followers.get(follower).unwrap())
+        .collect();
+
+    followers.sort_unstable();
+
+    let text_font = TextFont::from_font_size(SMALL).with_font(unicode_font_handle.0.clone());
+
+    let bundles: Vec<_> = followers
+        .iter()
+        .map(|f| {
+            let text = match f {
+                Follower::Priest => Text::new("☉"),
+                Follower::Goon => Text::new("♁"),
+                Follower::Minion => Text::new("☿"),
+            };
+            (ChildOf(follower_list), text, text_font.clone())
+        })
+        .collect();
+
+    commands.spawn_batch(bundles);
 }
 
 pub fn update_regional_suspicion(

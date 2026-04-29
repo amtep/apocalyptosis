@@ -7,22 +7,16 @@ use pyri_tooltip::{
 use strum::IntoEnumIterator;
 
 use crate::{
-    bases::{Base, Basetype},
     common::{CultName, CultSymbol},
     constants::ui::*,
-    followers::Follower,
     funds::{Expense, ExpenseCategory, Funds, FundsAmount, Income, IncomeCategory},
-    regions::{BasePlot, Region},
     state::{GameState, MainSetupSet},
     suspicion::{IntelligenceSuspicion, ScientificSuspicion},
     text::TextKey,
     time::{CurrentGameSpeed, GameDate, GameSpeed, GameSpeedAction, GameSpeedChangedEvent},
     ui::{
-        buttons::setup_observe_buttons,
-        dialog::setup_observe_dialogs,
-        main_menu::setup_main_menu,
+        buttons::setup_observe_buttons, dialog::setup_observe_dialogs, main_menu::setup_main_menu,
         menu::setup_observe_menus,
-        regions::{BasePlotUi, RegionSuspicionUi},
     },
 };
 
@@ -384,122 +378,6 @@ fn update_game_date(
 
 fn update_funds(funds: Res<Funds>, mut text_key: Single<&mut TextKey, With<FundsUi>>) {
     text_key.replace_arg("funds", funds.0);
-}
-
-fn on_spawn_base(
-    event: On<Add, Base>,
-    mut commands: Commands,
-    bases: Query<&ChildOf, With<Base>>,
-    base_plots: Query<(&ChildOf, &Views), With<BasePlot>>,
-    regions: Query<&Views, With<Region>>,
-    mut region_suspicion_uis: Query<&mut Node, With<RegionSuspicionUi>>,
-    base_plot_uis: Query<&BasePlotUi>,
-    base_types: Query<&Basetype, With<Base>>,
-    font_handle: Res<FontHandle>,
-) {
-    let base_plot = bases.get(event.entity).unwrap().0;
-    let (region, base_plot_views) = base_plots.get(base_plot).unwrap();
-    let region_views = regions.get(region.0).unwrap();
-    let mut region_suspicion_ui_node = region_views
-        .iter()
-        .find(|view| region_suspicion_uis.contains(*view))
-        .map(|view| region_suspicion_uis.get_mut(view).unwrap())
-        .unwrap();
-
-    if region_suspicion_ui_node.display == Display::None {
-        region_suspicion_ui_node.display = Display::Flex;
-    }
-
-    let base_plot_ui = base_plot_views
-        .iter()
-        .find(|view| base_plot_uis.contains(*view))
-        .unwrap();
-    let base_type = base_types.get(event.entity).unwrap();
-
-    commands
-        .spawn((
-            ChildOf(base_plot_ui),
-            ViewOf(event.entity),
-            BaseUi,
-            Node {
-                flex_direction: FlexDirection::Column,
-                border: UiRect::all(px(1)),
-                border_radius: BorderRadius::all(px(5)),
-                padding: UiRect::horizontal(px(2)),
-                align_items: AlignItems::Center,
-                ..default()
-            },
-            BorderColor::all(WHITE),
-            BackgroundColor::from(BUTTON_BACKGROUND.with_alpha(0.75)),
-        ))
-        .observe(on_label_over)
-        .observe(on_label_out)
-        .with_children(|parent| {
-            parent.spawn((
-                TextKey::new(format!("basetype-{}", &base_type.name)),
-                TextFont::from_font_size(NORMAL).with_font(font_handle.0.clone()),
-            ));
-            parent.spawn((
-                FollowerList,
-                Node {
-                    flex_direction: FlexDirection::Row,
-                    justify_content: JustifyContent::Center,
-                    ..default()
-                },
-            ));
-        });
-}
-
-fn on_changed_follower<E: EntityEvent>(
-    event: On<E, Follower>,
-    mut commands: Commands,
-    parents: Query<&ChildOf>,
-    children: Query<&Children>,
-    followers: Query<&Follower>,
-    base_views: Query<&Views, With<Base>>,
-    base_uis: Query<&BaseUi>,
-    follower_lists: Query<&FollowerList>,
-    unicode_font_handle: Res<UnicodeFontHandle>,
-) {
-    let base = parents.get(event.event_target()).unwrap().0;
-    let base_views = base_views.get(base).unwrap();
-    let base_ui = base_views
-        .iter()
-        .find(|view| base_uis.contains(*view))
-        .unwrap();
-    let follower_list = children
-        .get(base_ui)
-        .unwrap()
-        .iter()
-        .find(|fl| follower_lists.contains(*fl))
-        .unwrap();
-
-    commands.entity(follower_list).despawn_children();
-
-    let mut followers: Vec<Follower> = children
-        .get(base)
-        .unwrap()
-        .iter()
-        .map(|follower| *followers.get(follower).unwrap())
-        .collect();
-
-    followers.sort_unstable();
-
-    let text_font = TextFont::from_font_size(SMALL).with_font(unicode_font_handle.0.clone());
-
-    let bundles: Vec<_> = followers
-        .iter()
-        .map(|f| {
-            let text = match f {
-                Follower::Priest => Text::new("☉"),
-                Follower::Goon => Text::new("♁"),
-                Follower::Minion => Text::new("☿"),
-            };
-            (ChildOf(follower_list), text, text_font.clone())
-        })
-        .collect();
-
-    commands.spawn_batch(bundles);
 }
 
 fn update_suspicion(

@@ -30,10 +30,10 @@ pub fn plugin(app: &mut App) {
 }
 
 #[derive(Deserialize, Asset, TypePath)]
-struct BasetypesAsset(HashMap<String, BasetypeSettings>);
+pub struct BasetypesAsset(pub HashMap<String, BasetypeSettings>);
 
 #[derive(Resource)]
-struct BasetypesHandle(Handle<BasetypesAsset>);
+pub struct BasetypesHandle(pub Handle<BasetypesAsset>);
 
 #[derive(Deserialize, Debug, Clone, Copy, Reflect)]
 #[serde(rename_all = "kebab-case")]
@@ -50,18 +50,10 @@ fn setup_load(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 /// A marker component for bases in the game state.
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Clone)]
 #[reflect(Component)]
 #[require(Save)]
-pub struct Base;
-
-/// The `String` is the key for the base type in the `Basetypes` asset.
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-pub struct Basetype {
-    pub name: String,
-    pub settings: BasetypeSettings,
-}
+pub struct Base(pub String);
 
 fn new_game(
     mut commands: Commands,
@@ -76,21 +68,20 @@ fn new_game(
 
     let base_types = &base_types_asset.get(base_types_handle.0.id()).unwrap().0;
     // TODO: don't hardcode this string
-    let apartment = base_types.get_key_value("apartment").unwrap();
+    let apartment = base_types.get("apartment").unwrap();
     commands.entity(base_plot).with_child((
-        Base,
-        Basetype {
-            name: apartment.0.clone(),
-            settings: *apartment.1,
-        },
-        Expense(apartment.1.cost_per_day, ExpenseCategory::Bases),
+        Base("apartment".into()),
+        Expense(apartment.cost_per_day, ExpenseCategory::Bases),
     ));
 }
 
-fn loaded_game(mut commands: Commands, bases: Query<Entity, With<Base>>) {
-    for base in bases {
+fn loaded_game(mut commands: Commands, bases: Query<(Entity, &Base)>) {
+    for (entity, base) in bases {
         // Remove and re-insert the Base in order to trigger the Add observer
         // that builds the base UI.
-        commands.entity(base).remove::<Base>().insert(Base);
+        commands
+            .entity(entity)
+            .remove::<Base>()
+            .insert(base.clone());
     }
 }

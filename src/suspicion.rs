@@ -3,7 +3,7 @@ use rand::RngExt;
 use rand_distr::Poisson;
 
 use crate::{
-    bases::{Base, Basetype},
+    bases::{Base, BasetypesAsset, BasetypesHandle},
     regions::{BasePlot, Region},
     rng::RandomSource,
     state::{GameState, MainSetupSet},
@@ -50,11 +50,15 @@ fn update_suspicion(
     mut scien_suspicion: ResMut<ScientificSuspicion>,
     mut regions: Query<(&mut PoliceSuspicion, &mut MediaSuspicion, &Children), With<Region>>,
     base_plots: Query<&Children, With<BasePlot>>,
-    bases: Query<&Basetype, With<Base>>,
+    base_types_handle: Res<BasetypesHandle>,
+    base_types_asset: Res<Assets<BasetypesAsset>>,
+    bases: Query<&Base>,
     mut random: ResMut<RandomSource>,
 ) {
     intel_suspicion.0 += random.0.sample(Poisson::new(1.0).unwrap()) as u32;
     scien_suspicion.0 += random.0.sample(Poisson::new(1.0).unwrap()) as u32;
+
+    let base_types = &base_types_asset.get(base_types_handle.0.id()).unwrap().0;
 
     for (mut police_suspicion, mut media_suspicion, children) in regions.iter_mut() {
         let mut police = 0;
@@ -64,8 +68,9 @@ fn update_suspicion(
             if let Ok(children) = base_plots.get(*child) {
                 for child in children {
                     let base_type = bases.get(*child).unwrap();
-                    police += base_type.settings.police_suspicion;
-                    media += base_type.settings.media_suspicion;
+                    let settings = base_types.get(&base_type.0).unwrap();
+                    police += settings.police_suspicion;
+                    media += settings.media_suspicion;
                 }
             }
         }

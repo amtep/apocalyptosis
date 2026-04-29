@@ -75,10 +75,7 @@ struct MenuHeadingUi;
 struct MenuItemUi;
 
 #[derive(Component)]
-struct MenuClicked {
-    heading: String,
-    item: String,
-}
+struct MenuClicked(String);
 
 pub fn setup_observe_menus(mut commands: Commands) {
     commands.add_observer(on_menu_add);
@@ -144,7 +141,7 @@ fn on_menu_add(
                     .with_children(|parent| {
                         parent.spawn(hrule.clone());
                         parent.spawn((
-                            entry.heading.clone(),
+                            entry.heading,
                             TextColor::from(TEXT_HIGHLIGHT),
                             TextFont::from_font_size(SMALL).with_font(font.clone()),
                         ));
@@ -172,20 +169,17 @@ fn on_menu_add(
                                 cmd.insert(InteractionDisabled);
                             }
 
-                            let heading = entry.heading.0.clone();
+                            let text = item.text.0.clone();
 
                             cmd.with_child((
-                            item.text.clone(),
+                            item.text,
                             TextColor::from(TEXT),
                             TextFont::from_font_size(SMALL).with_font(font.clone()),
-                        )).observe(move |mut click: On<Pointer<Click>>,
+                            )).observe(move |mut click: On<Pointer<Click>>,
                               mut commands: Commands,
                               has_disableds: Query<Has<InteractionDisabled>>| {
                                     if !has_disableds.get(click.entity).unwrap() {
-                                        commands.entity(menu_entity).insert(MenuClicked {
-                                            heading: heading.clone(),
-                                            item: item.text.0.clone()
-                                        });
+                                        commands.entity(menu_entity).insert(MenuClicked(text.clone()));
                                         commands.entity(menu_entity).despawn();
                                     }
                                     click.propagate(false);
