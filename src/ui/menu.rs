@@ -75,7 +75,7 @@ struct MenuHeadingUi;
 struct MenuItemUi;
 
 #[derive(Component)]
-struct MenuClicked(String);
+pub struct MenuClicked(pub String);
 
 pub fn setup_observe_menus(mut commands: Commands) {
     commands.add_observer(on_menu_add);
@@ -155,14 +155,11 @@ fn on_menu_add(
                         ..default()
                     })
                     .with_children(|parent| {
-                        for item in entry.items {
+                        for (index, item) in entry.items.into_iter().enumerate() {
+                            let background_color = if index % 2 == 0 { WHITE.with_alpha(0.01) } else { Srgba::NONE };
                             let mut cmd = parent.spawn((
                                 MenuItemUi,
                                 Button,
-                                Node {
-                                    padding: UiRect::axes(px(5), px(2)),
-                                    ..default()
-                                },
                             ));
 
                             if !item.enabled {
@@ -171,19 +168,29 @@ fn on_menu_add(
 
                             let text = item.text.0.clone();
 
-                            cmd.with_child((
-                            item.text,
-                            TextColor::from(TEXT),
-                            TextFont::from_font_size(SMALL).with_font(font.clone()),
-                            )).observe(move |mut click: On<Pointer<Click>>,
-                              mut commands: Commands,
-                              has_disableds: Query<Has<InteractionDisabled>>| {
-                                    if !has_disableds.get(click.entity).unwrap() {
-                                        commands.entity(menu_entity).insert(MenuClicked(text.clone()));
-                                        commands.entity(menu_entity).despawn();
-                                    }
-                                    click.propagate(false);
-                              });
+                            cmd.with_children(|parent| {
+                                parent.spawn((
+                                    Node {
+                                        width: percent(100),
+                                        height: percent(100),
+                                        padding: UiRect::axes(px(5), px(2)),
+                                        ..Default::default()
+                                    },
+                                    BackgroundColor::from(background_color),
+                                )).with_child((
+                                    item.text,
+                                    TextColor::from(TEXT),
+                                    TextFont::from_font_size(SMALL).with_font(font.clone()),
+                                    )).observe(move |mut click: On<Pointer<Click>>,
+                                    mut commands: Commands,
+                                    has_disableds: Query<Has<InteractionDisabled>>| {
+                                            if !has_disableds.get(click.entity).unwrap() {
+                                                commands.entity(menu_entity).insert(MenuClicked(text.clone()));
+                                                commands.entity(menu_entity).despawn();
+                                            }
+                                            click.propagate(false);
+                                });
+                            });
                         }
                     });
             }

@@ -151,6 +151,12 @@ impl From<&str> for TextKey {
     }
 }
 
+impl From<String> for TextKey {
+    fn from(value: String) -> Self {
+        Self(value, Vec::new())
+    }
+}
+
 #[derive(Debug, Error)]
 enum FluentResourceLoaderError {
     #[error("read error: {0}")]

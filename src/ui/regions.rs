@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    bases::Base,
+    bases::{Base, BasetypesAsset, BasetypesHandle},
     constants::ui::*,
     followers::Follower,
     regions::{BasePlot, Location, Region},
@@ -9,7 +9,7 @@ use crate::{
     text::TextKey,
     ui::{
         BaseUi, FollowerList, UnicodeFontHandle,
-        menu::{Menu, MenuEntry},
+        menu::{Menu, MenuClicked, MenuEntry, MenuItem},
     },
 };
 
@@ -148,12 +148,28 @@ fn on_location_reloaded(
     }
 }
 
-fn on_region_click(click: On<Pointer<Click>>, mut commands: Commands) {
-    let entry = MenuEntry::new("menu-region-bases").with_items_iter(std::iter::empty());
+fn on_region_click(
+    click: On<Pointer<Click>>,
+    mut commands: Commands,
+    base_types_handle: Res<BasetypesHandle>,
+    base_types_asset: Res<Assets<BasetypesAsset>>,
+) {
+    let base_types = &base_types_asset.get(base_types_handle.0.id()).unwrap().0;
+    let iter = base_types.keys().map(|name| MenuItem {
+        enabled: true,
+        text: format!("acquire-{}", name).into(),
+        description: format!("acquire-{}-desc", name).into(),
+    });
+    let entry = MenuEntry::new("menu-region-bases").with_items_iter(iter);
 
     commands
-        .entity(click.entity)
-        .with_child(Menu::new().with_entry(entry));
+        .spawn((ChildOf(click.entity), Menu::new().with_entry(entry)))
+        .observe(
+            |menu_clicked: On<Add, MenuClicked>, menu_clickeds: Query<&MenuClicked>| {
+                let menu_clicked = menu_clickeds.get(menu_clicked.entity).unwrap();
+                info!("menu clicked: {}", menu_clicked.0);
+            },
+        );
 }
 
 fn on_spawn_base(
