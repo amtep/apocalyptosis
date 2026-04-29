@@ -17,13 +17,11 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
-    bases::Base,
     common::{CultName, CultSymbol},
     constants::{
         AUTOSAVE_INTERVAL,
         files::{PROJECT_DIR_APPLICATION, PROJECT_DIR_ORGANIZATION, PROJECT_DIR_QUALIFIER},
     },
-    followers::Follower,
     funds::{Funds, FundsAmount},
     main_menu::NewGame,
     state::{GameState, MainSetupSet},
@@ -60,8 +58,6 @@ pub struct SaveMetadata {
     pub cult_name: String,
     pub cult_symbol: char,
     pub game_date: NaiveDate,
-    pub followers: usize,
-    pub bases: usize,
     pub funds: FundsAmount,
 }
 
@@ -140,8 +136,6 @@ fn save(
     cult_name: Res<CultName>,
     cult_symbol: Res<CultSymbol>,
     game_date: Res<GameDate>,
-    q_followers: Query<(), With<Follower>>,
-    q_bases: Query<(), With<Base>>,
     funds: Res<Funds>,
 ) {
     let index = if let Some(index) = campaign {
@@ -164,8 +158,6 @@ fn save(
         cult_name: cult_name.0.clone(),
         cult_symbol: cult_symbol.0,
         game_date: game_date.0,
-        followers: q_followers.count(),
-        bases: q_bases.count(),
         funds: funds.0,
     };
     if let Err(e) = save_inner(commands.reborrow(), index, metadata) {
@@ -182,8 +174,6 @@ fn autosave(
     cult_name: Res<CultName>,
     cult_symbol: Res<CultSymbol>,
     game_date: Res<GameDate>,
-    q_followers: Query<(), With<Follower>>,
-    q_bases: Query<(), With<Base>>,
     funds: Res<Funds>,
 ) {
     if timer.tick(time.delta()).just_finished() {
@@ -193,8 +183,6 @@ fn autosave(
             cult_name,
             cult_symbol,
             game_date,
-            q_followers,
-            q_bases,
             funds,
         );
     }
@@ -206,8 +194,6 @@ fn first_save(
     cult_name: Res<CultName>,
     cult_symbol: Res<CultSymbol>,
     game_date: Res<GameDate>,
-    q_followers: Query<(), With<Follower>>,
-    q_bases: Query<(), With<Base>>,
     funds: Res<Funds>,
 ) {
     save(
@@ -216,8 +202,6 @@ fn first_save(
         cult_name,
         cult_symbol,
         game_date,
-        q_followers,
-        q_bases,
         funds,
     );
 }
@@ -229,8 +213,6 @@ fn listen_save_keys(
     cult_name: Res<CultName>,
     cult_symbol: Res<CultSymbol>,
     game_date: Res<GameDate>,
-    q_followers: Query<(), With<Follower>>,
-    q_bases: Query<(), With<Base>>,
     funds: Res<Funds>,
 ) {
     if keys.just_pressed(KeyCode::F5) {
@@ -240,8 +222,6 @@ fn listen_save_keys(
             cult_name,
             cult_symbol,
             game_date,
-            q_followers,
-            q_bases,
             funds,
         );
     }
