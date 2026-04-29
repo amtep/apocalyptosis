@@ -310,12 +310,11 @@ fn setup_map(
                                 width: px(25),
                                 ..default()
                             },
-                            // 23F8 DOUBLE VERTICAL BAR would be better but is not in the font.
-                            // DOUBLE VERTICAL LINE
-                            Text("\u{2016}".to_string()),
-                            TextColor::from(TEXT),
-                            unicode_text_font.clone(),
-                            TextLayout::new_with_justify(Justify::Center),
+                            ImageNode {
+                                image: asset_server.load(ICON_PAUSE),
+                                color: TEXT.into(),
+                                ..default()
+                            },
                         ))
                         .observe(on_game_speed_clicked);
                     parent
@@ -734,16 +733,30 @@ fn on_label_out(
 
 fn update_game_speed_state(
     current_game_speed: Res<CurrentGameSpeed>,
-    mut game_speed_buttons: Query<(&mut TextColor, &GameSpeedAction)>,
+    mut game_speed_buttons: Query<(
+        Option<&mut TextColor>,
+        Option<&mut ImageNode>,
+        &GameSpeedAction,
+    )>,
 ) {
-    for (mut text_color, &speed_action) in game_speed_buttons.iter_mut() {
+    for (mut text_color, mut image, &speed_action) in game_speed_buttons.iter_mut() {
         let is_active = speed_action == GameSpeedAction::TogglePause && current_game_speed.paused
             || speed_action == GameSpeedAction::SetSpeed(current_game_speed.speed)
                 && !current_game_speed.paused;
         if is_active {
-            *text_color = TEXT_HIGHLIGHT.into();
+            if let Some(text_color) = text_color.as_mut() {
+                **text_color = TEXT_HIGHLIGHT.into();
+            }
+            if let Some(image) = image.as_mut() {
+                image.color = TEXT_HIGHLIGHT.into();
+            }
         } else {
-            *text_color = TEXT.into();
+            if let Some(text_color) = text_color.as_mut() {
+                **text_color = TEXT.into();
+            }
+            if let Some(image) = image.as_mut() {
+                image.color = TEXT.into();
+            }
         }
     }
 }

@@ -58,4 +58,6 @@ pub mod ui {
     pub const LARGE: f32 = 16.0;
     pub const NORMAL: f32 = 14.0;
     pub const SMALL: f32 = 12.0;
+
+    pub const ICON_PAUSE: &str = "textures/pause.png";
 }
