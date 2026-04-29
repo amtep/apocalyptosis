@@ -18,5 +18,5 @@ load-error-body = We were unable to load your saved game.
 load-game-title = Select Saved Game
 load-game-confirm = Load
 
-saved-game-date = { DATETIME($date, dateStyle: "medium", timeStyle: "short") }
+saved-game-date = last played { DATETIME($date, dateStyle: "medium", timeStyle: "short") }
 

@@ -215,9 +215,9 @@ pub fn setup_main_menu(
                     parent.spawn(button("menu-button-load-game")).observe(
                         |click: On<Pointer<Click>>,
                          mut commands: Commands,
-                         font: Res<FontHandle>| {
+                         font: Res<FontHandle>, unicode_font: Res<UnicodeFontHandle>| {
                             if click.button == PointerButton::Primary {
-                                open_load_game_popup(commands.reborrow(), font.0.clone());
+                                open_load_game_popup(commands.reborrow(), font.0.clone(), unicode_font.0.clone());
                             }
                         },
                     );

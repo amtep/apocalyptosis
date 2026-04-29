@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    constants::ui::{BORDER, NORMAL},
+    constants::ui::{BORDER, NORMAL, TEXT},
     main_menu::LoadedGame,
     save_load::{Campaign, load, scan_saved_games},
     state::GameState,
@@ -42,7 +42,11 @@ fn warn_no_load() -> Dialog {
         .with_cancel_label("dialog-back")
 }
 
-pub fn open_load_game_popup(mut commands: Commands, font: Handle<Font>) {
+pub fn open_load_game_popup(
+    mut commands: Commands,
+    font: Handle<Font>,
+    unicode_font: Handle<Font>,
+) {
     let mut v = match scan_saved_games() {
         Err(e) => {
             error!("Could not scan saved games: {e}");
@@ -62,17 +66,70 @@ pub fn open_load_game_popup(mut commands: Commands, font: Handle<Font>) {
         })
         .id();
     let text_font = TextFont::from_font_size(NORMAL).with_font(font.clone());
+    let unicode_font = TextFont::from_font_size(NORMAL).with_font(unicode_font.clone());
     for (campaign, metadata, content) in v {
         commands
             .spawn((
                 Button,
                 Node {
+                    flex_direction: FlexDirection::Column,
                     border: UiRect::all(px(2)),
+                    border_radius: BorderRadius::all(px(10.0)),
+                    padding: UiRect::all(px(4)),
                     ..default()
                 },
                 BorderColor::all(BORDER),
                 ChildOf(body),
                 LoadGameOption(campaign, content),
+                children![
+                    (
+                        Node::default(),
+                        children![
+                            (
+                                Text(format!("{} ", metadata.cult_symbol)),
+                                unicode_font.clone(),
+                                TextColor(TEXT.into()),
+                            ),
+                            (
+                                Text(metadata.cult_name),
+                                text_font.clone(),
+                                TextColor(TEXT.into()),
+                            ),
+                        ]
+                    ),
+                    (
+                        Node::default(),
+                        children![
+                            (
+                                TextKey::new("game-date-display")
+                                    .add_arg("date", metadata.game_date),
+                                text_font.clone(),
+                                TextColor(TEXT.into())
+                            ),
+                            Node {
+                                flex_grow: 1.0,
+                                ..default()
+                            },
+                            (
+                                TextKey::new("funds").add_arg("funds", metadata.funds),
+                                text_font.clone(),
+                                TextColor(TEXT.into())
+                            ),
+                        ]
+                    ),
+                    (
+                        Node {
+                            flex_direction: FlexDirection::RowReverse,
+                            ..default()
+                        },
+                        children![(
+                            TextKey::new("saved-game-date")
+                                .add_arg("date", metadata.save_timestamp),
+                            text_font.clone(),
+                            TextColor(TEXT.into()),
+                        )]
+                    ),
+                ],
             ))
             .observe(
                 |click: On<Pointer<Click>>,
@@ -87,16 +144,7 @@ pub fn open_load_game_popup(mut commands: Commands, font: Handle<Font>) {
                         q.get_mut(click.entity).unwrap().1.border = UiRect::all(px(4));
                     }
                 },
-            )
-            .with_child((Text(format!("{}", *campaign)), text_font.clone()))
-            .with_child(Node {
-                flex_grow: 1.0,
-                ..default()
-            })
-            .with_child((
-                TextKey::new("saved-game-date").add_arg("date", metadata.save_timestamp),
-                text_font.clone(),
-            ));
+            );
     }
     commands
         .spawn(
