@@ -1,4 +1,5 @@
 use bevy::{prelude::*, window::WindowMode};
+use bevy_scrollbar::ScrollbarPlugin;
 use bevy_ui_text_input::TextInputPlugin;
 use pyri_tooltip::TooltipPlugin;
 
@@ -22,18 +23,21 @@ pub fn main_loop() {
                 }),
             TooltipPlugin::default(),
             TextInputPlugin,
-            crate::state::plugin,
-            crate::text::plugin,
-            crate::regions::plugin,
-            crate::bases::plugin,
-            crate::rng::plugin,
-            crate::funds::plugin,
-            crate::ui::plugin,
-            crate::time::plugin,
-            crate::followers::plugin,
-            crate::suspicion::plugin,
-            crate::main_menu::plugin,
-            crate::save_load::plugin,
+            ScrollbarPlugin,
+            (
+                crate::state::plugin,
+                crate::text::plugin,
+                crate::regions::plugin,
+                crate::bases::plugin,
+                crate::rng::plugin,
+                crate::funds::plugin,
+                crate::ui::plugin,
+                crate::time::plugin,
+                crate::followers::plugin,
+                crate::suspicion::plugin,
+                crate::main_menu::plugin,
+                crate::save_load::plugin,
+            ),
         ))
         .run();
 }

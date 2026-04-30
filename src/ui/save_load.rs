@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_scrollbar::{Scrollbar, ThumbColor};
 
 use crate::{
     constants::ui::{BORDER, NORMAL, TEXT},
@@ -56,14 +57,39 @@ pub fn open_load_game_popup(
         Ok(v) => v,
     };
     v.sort_by_key(|(_, metadata, _)| std::cmp::Reverse(metadata.save_timestamp));
-    let body = commands
+    // TODO: make this fit in the flex space of the dialog, instead of guessing 80%.
+    let container = commands
         .spawn(Node {
-            flex_direction: FlexDirection::Column,
-            width: percent(80.0),
-            row_gap: px(4),
+            width: percent(100),
+            height: percent(80),
             ..default()
         })
         .id();
+    let body = commands
+        .spawn((
+            Node {
+                height: percent(100),
+                flex_direction: FlexDirection::Column,
+                overflow: Overflow::scroll_y(),
+                row_gap: px(4),
+                ..default()
+            },
+            ChildOf(container),
+        ))
+        .id();
+    commands.spawn((
+        Scrollbar { scrollable: body },
+        ChildOf(container),
+        Node {
+            width: px(5),
+            height: percent(100),
+            border: UiRect::all(px(1)),
+            margin: UiRect::left(px(5)),
+            ..default()
+        },
+        BorderColor::all(BORDER),
+        ThumbColor(BORDER.into()),
+    ));
     let text_font = TextFont::from_font_size(NORMAL).with_font(font.clone());
     let unicode_font = TextFont::from_font_size(NORMAL).with_font(unicode_font.clone());
     for (campaign, metadata, content) in v {
@@ -72,6 +98,7 @@ pub fn open_load_game_popup(
                 Button,
                 Node {
                     flex_direction: FlexDirection::Column,
+                    height: percent(100),
                     border: UiRect::all(px(2)),
                     border_radius: BorderRadius::all(px(10.0)),
                     padding: UiRect::all(px(4)),
@@ -149,7 +176,7 @@ pub fn open_load_game_popup(
         .spawn(
             Dialog::new()
                 .with_title("load-game-title")
-                .with_entity_body(body)
+                .with_entity_body(container)
                 .with_confirm_label("load-game-confirm")
                 .with_cancel_label("dialog-back"),
         )
