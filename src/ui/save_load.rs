@@ -11,7 +11,7 @@ use crate::{
     text::TextKey,
     ui::{
         Selected,
-        dialog::{Dialog, DialogConfirmed},
+        dialog::{Dialog, DialogConfirm, DialogConfirmed},
     },
 };
 
@@ -64,15 +64,14 @@ pub fn open_load_game_popup(
     let container = commands
         .spawn(Node {
             width: percent(100),
-            height: percent(80),
+            height: percent(82),
             ..default()
         })
         .id();
     let body = commands
         .spawn((
             Node {
-                height: percent(100),
-                flex_grow: 1.0,
+                width: percent(100),
                 flex_direction: FlexDirection::Column,
                 overflow: Overflow::scroll_y(),
                 row_gap: px(4),
@@ -174,14 +173,15 @@ pub fn open_load_game_popup(
                 ],
             ))
             .observe(
-                |click: On<Pointer<Click>>,
-                 mut commands: Commands,
-                 mut q: Query<(Entity, &mut Node), With<LoadGameOption>>| {
+                move |click: On<Pointer<Click>>,
+                      mut commands: Commands,
+                      mut q: Query<(Entity, &mut Node), With<LoadGameOption>>| {
                     if click.button == PointerButton::Primary {
                         for (e, mut node) in &mut q {
                             commands.entity(e).remove::<Selected>();
                             node.border = UiRect::all(px(2));
                         }
+                        commands.entity(container).insert(DialogConfirm(true));
                         commands.entity(click.entity).insert(Selected);
                         q.get_mut(click.entity).unwrap().1.border = UiRect::all(px(4));
                     }
@@ -193,6 +193,7 @@ pub fn open_load_game_popup(
             Dialog::new()
                 .with_title("load-game-title")
                 .with_entity_body(container)
+                .with_confirm_disabled()
                 .with_confirm_label("load-game-confirm")
                 .with_cancel_label("dialog-back"),
         )
