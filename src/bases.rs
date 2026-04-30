@@ -35,7 +35,7 @@ pub struct BasetypesAsset(pub HashMap<String, BasetypeSettings>);
 #[derive(Resource)]
 pub struct BasetypesHandle(pub Handle<BasetypesAsset>);
 
-#[derive(Deserialize, Debug, Clone, Copy, Reflect)]
+#[derive(Deserialize, Debug, Clone, Reflect)]
 #[serde(rename_all = "kebab-case")]
 pub struct BasetypeSettings {
     pub people: isize,
@@ -43,6 +43,8 @@ pub struct BasetypeSettings {
     pub initial_cost: FundsAmount,
     pub police_suspicion: u32,
     pub media_suspicion: u32,
+    #[serde(default)]
+    pub regions: Vec<String>,
 }
 
 fn setup_load(mut commands: Commands, asset_server: Res<AssetServer>) {

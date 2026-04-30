@@ -99,7 +99,6 @@ fn on_menu_add(
             top: percent(100),
             left: px(10),
             min_width: px(100),
-            height: auto(),
             position_type: PositionType::Absolute,
             flex_direction: FlexDirection::Column,
             margin: UiRect::top(px(5)),
@@ -130,8 +129,6 @@ fn on_menu_add(
                 parent
                     .spawn((
                         Node {
-                            width: auto(),
-                            height: auto(),
                             padding: UiRect::axes(px(5), px(2)),
                             flex_direction: FlexDirection::Row,
                             ..default()
@@ -149,8 +146,6 @@ fn on_menu_add(
 
                 parent
                     .spawn(Node {
-                        width: auto(),
-                        height: auto(),
                         flex_direction: FlexDirection::Column,
                         ..default()
                     })
@@ -172,15 +167,15 @@ fn on_menu_add(
                                 parent.spawn((
                                     Node {
                                         width: percent(100),
-                                        height: percent(100),
                                         padding: UiRect::axes(px(5), px(2)),
-                                        ..Default::default()
+                                        ..default()
                                     },
                                     BackgroundColor::from(background_color),
                                 )).with_child((
                                     item.text,
                                     TextColor::from(TEXT),
                                     TextFont::from_font_size(SMALL).with_font(font.clone()),
+                                    TextLayout::new_with_no_wrap(),
                                     )).observe(move |mut click: On<Pointer<Click>>,
                                     mut commands: Commands,
                                     has_disableds: Query<Has<InteractionDisabled>>| {

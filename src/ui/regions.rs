@@ -152,15 +152,24 @@ fn on_location_reloaded(
 fn on_region_click(
     click: On<Pointer<Click>>,
     mut commands: Commands,
+    region_uis: Query<&ViewOf, With<RegionUi>>,
+    regions: Query<&Region>,
     base_types_handle: Res<BasetypesHandle>,
     base_types_asset: Res<Assets<BasetypesAsset>>,
 ) {
+    let region = region_uis.get(click.entity).unwrap().0;
+    let region_name = &regions.get(region).unwrap().name;
     let base_types = &base_types_asset.get(base_types_handle.0.id()).unwrap().0;
-    let iter = base_types.keys().map(|name| MenuItem {
-        enabled: true,
-        text: format!("acquire-{}", name).into(),
-        description: format!("acquire-{}-desc", name).into(),
-    });
+    let iter = base_types
+        .iter()
+        .filter(|(_, settings)| {
+            settings.regions.is_empty() || settings.regions.contains(region_name)
+        })
+        .map(|(name, _)| MenuItem {
+            enabled: true,
+            text: format!("acquire-{}", name).into(),
+            description: format!("acquire-{}-desc", name).into(),
+        });
     let entry = MenuEntry::new("menu-region-bases").with_items_iter(iter);
 
     commands
@@ -188,6 +197,24 @@ fn on_region_click(
                                 .with_cancel()
                                 .with_title("acquire-old-farmhouse")
                                 .with_text_body("acquire-old-farmhouse-dialog"),
+                        );
+                    }
+                    "acquire-abandoned-hospital" => {
+                        commands.spawn(
+                            Dialog::new()
+                                .with_pause()
+                                .with_cancel()
+                                .with_title("acquire-abandoned-hospital")
+                                .with_text_body("acquire-abandoned-hospital-dialog"),
+                        );
+                    }
+                    "acquire-castle" => {
+                        commands.spawn(
+                            Dialog::new()
+                                .with_pause()
+                                .with_cancel()
+                                .with_title("acquire-castle")
+                                .with_text_body("acquire-castle-dialog"),
                         );
                     }
                     _ => unreachable!(),
