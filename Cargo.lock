@@ -178,7 +178,6 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_common_assets",
- "bevy_scrollbar",
  "bevy_ui_text_input",
  "chrono",
  "directories",
@@ -972,6 +971,7 @@ dependencies = [
  "bevy_transform",
  "bevy_ui",
  "bevy_ui_render",
+ "bevy_ui_widgets",
  "bevy_utils",
  "bevy_window",
  "bevy_winit",
@@ -1321,16 +1321,6 @@ dependencies = [
  "serde",
  "thiserror 2.0.18",
  "uuid",
-]
-
-[[package]]
-name = "bevy_scrollbar"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68612e98290451492d245174d734c9ffa37734ae6e06addcbbde8890956e6b32"
-dependencies = [
- "bevy",
- "log",
 ]
 
 [[package]]

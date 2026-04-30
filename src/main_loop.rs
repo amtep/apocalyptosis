@@ -1,5 +1,4 @@
-use bevy::{prelude::*, window::WindowMode};
-use bevy_scrollbar::ScrollbarPlugin;
+use bevy::{prelude::*, ui_widgets::ScrollbarPlugin, window::WindowMode};
 use bevy_ui_text_input::TextInputPlugin;
 use pyri_tooltip::TooltipPlugin;
 

@@ -1,5 +1,7 @@
-use bevy::prelude::*;
-use bevy_scrollbar::{Scrollbar, ThumbColor};
+use bevy::{
+    prelude::*,
+    ui_widgets::{ControlOrientation, CoreScrollbarThumb, Scrollbar},
+};
 
 use crate::{
     constants::ui::{BORDER, NORMAL, TEXT},
@@ -70,6 +72,7 @@ pub fn open_load_game_popup(
         .spawn((
             Node {
                 height: percent(100),
+                flex_grow: 1.0,
                 flex_direction: FlexDirection::Column,
                 overflow: Overflow::scroll_y(),
                 row_gap: px(4),
@@ -78,19 +81,32 @@ pub fn open_load_game_popup(
             ChildOf(container),
         ))
         .id();
-    commands.spawn((
-        Scrollbar { scrollable: body },
-        ChildOf(container),
-        Node {
-            width: px(5),
-            height: percent(100),
-            border: UiRect::all(px(1)),
-            margin: UiRect::left(px(5)),
-            ..default()
-        },
-        BorderColor::all(BORDER),
-        ThumbColor(BORDER.into()),
-    ));
+    commands
+        .spawn((
+            Scrollbar {
+                target: body,
+                orientation: ControlOrientation::Vertical,
+                min_thumb_length: 20.0,
+            },
+            ChildOf(container),
+            Node {
+                width: px(5),
+                height: percent(100),
+                border: UiRect::all(px(1)),
+                margin: UiRect::left(px(5)),
+                ..default()
+            },
+            BorderColor::all(BORDER),
+        ))
+        .with_child((
+            CoreScrollbarThumb,
+            Node {
+                position_type: PositionType::Absolute,
+                border_radius: BorderRadius::all(px(2)),
+                ..default()
+            },
+            BackgroundColor(BORDER.into()),
+        ));
     let text_font = TextFont::from_font_size(NORMAL).with_font(font.clone());
     let unicode_font = TextFont::from_font_size(NORMAL).with_font(unicode_font.clone());
     for (campaign, metadata, content) in v {
@@ -99,7 +115,6 @@ pub fn open_load_game_popup(
                 Button,
                 Node {
                     flex_direction: FlexDirection::Column,
-                    height: percent(100),
                     border: UiRect::all(px(2)),
                     border_radius: BorderRadius::all(px(10.0)),
                     padding: UiRect::all(px(4)),

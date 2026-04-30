@@ -27,7 +27,6 @@ serde_derive = "1.0.228"
 strum = { version = "0.28.0", features = ["derive"] }
 thiserror = "2.0.18"
 unic-langid = { version = "0.9.6", features = ["macros"] }
-bevy_scrollbar = "0.6.0"
 
 [dependencies.bevy]
 version = "0.18.1"
@@ -38,7 +37,9 @@ features = [
     # This is because the main map background asset is a jpg
     "jpeg",
     # Only x11 support is default on linux
-    "wayland"
+    "wayland",
+    # for scrollbars
+    "experimental_bevy_ui_widgets",
 ]
 
 [profile.dev.package."*"]
