@@ -55,8 +55,7 @@ pub fn open_load_game_popup(
         }
         Ok(v) => v,
     };
-    v.sort_by_key(|(_, metadata, _)| metadata.save_timestamp);
-    v.reverse();
+    v.sort_by_key(|(_, metadata, _)| std::cmp::Reverse(metadata.save_timestamp));
     let body = commands
         .spawn(Node {
             flex_direction: FlexDirection::Column,

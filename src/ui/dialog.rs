@@ -248,7 +248,7 @@ fn on_dialog_add(
                     (
                         Node {
                             width: percent(50),
-                            height: px(40),
+                            height: px(30),
                             border: UiRect::all(px(1)),
                             border_radius: BorderRadius::all(px(5)),
                             justify_content: JustifyContent::Center,

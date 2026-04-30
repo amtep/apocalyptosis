@@ -9,6 +9,7 @@ use crate::{
     text::TextKey,
     ui::{
         BaseUi, FollowerList, UnicodeFontHandle,
+        dialog::Dialog,
         menu::{Menu, MenuClicked, MenuEntry, MenuItem},
     },
 };
@@ -165,9 +166,32 @@ fn on_region_click(
     commands
         .spawn((ChildOf(click.entity), Menu::new().with_entry(entry)))
         .observe(
-            |menu_clicked: On<Add, MenuClicked>, menu_clickeds: Query<&MenuClicked>| {
+            |menu_clicked: On<Add, MenuClicked>,
+             mut commands: Commands,
+             menu_clickeds: Query<&MenuClicked>| {
                 let menu_clicked = menu_clickeds.get(menu_clicked.entity).unwrap();
-                info!("menu clicked: {}", menu_clicked.0);
+
+                match menu_clicked.0.as_str() {
+                    "acquire-apartment" => {
+                        commands.spawn(
+                            Dialog::new()
+                                .with_pause()
+                                .with_cancel()
+                                .with_title("acquire-apartment")
+                                .with_text_body("acquire-apartment-dialog"),
+                        );
+                    }
+                    "acquire-old-farmhouse" => {
+                        commands.spawn(
+                            Dialog::new()
+                                .with_pause()
+                                .with_cancel()
+                                .with_title("acquire-old-farmhouse")
+                                .with_text_body("acquire-old-farmhouse-dialog"),
+                        );
+                    }
+                    _ => unreachable!(),
+                }
             },
         );
 }
