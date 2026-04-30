@@ -35,6 +35,7 @@ fn warn_no_load_scan() -> Dialog {
 }
 
 #[must_use]
+#[expect(dead_code)]
 fn warn_no_load() -> Dialog {
     Dialog::new()
         .with_title("load-error-title")

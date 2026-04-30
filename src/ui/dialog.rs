@@ -80,6 +80,7 @@ impl Dialog {
         }
     }
 
+    #[expect(dead_code)]
     pub fn with_text_body_font(self, font: Handle<Font>) -> Self {
         Self {
             text_body_font: Some(font),

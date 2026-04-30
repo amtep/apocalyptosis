@@ -6,6 +6,7 @@ use crate::{constants::ui::*, text::TextKey, ui::FontHandle};
 pub struct MenuItem {
     pub enabled: bool,
     pub text: TextKey,
+    #[expect(dead_code)]
     pub description: TextKey,
 }
 
@@ -23,6 +24,7 @@ impl MenuEntry {
         }
     }
 
+    #[expect(dead_code)]
     pub fn with_item(mut self, item: MenuItem) -> Self {
         self.items.push(item);
         self
@@ -33,6 +35,7 @@ impl MenuEntry {
         self
     }
 
+    #[expect(dead_code)]
     pub fn with_items(mut self, items: &[MenuItem]) -> Self {
         self.items.extend_from_slice(items);
         self
@@ -54,11 +57,13 @@ impl Menu {
         self
     }
 
+    #[expect(dead_code)]
     pub fn with_entries_iter<I: IntoIterator<Item = MenuEntry>>(mut self, entries: I) -> Self {
         self.entries.extend(entries);
         self
     }
 
+    #[expect(dead_code)]
     pub fn with_entries(mut self, entries: &[MenuEntry]) -> Self {
         self.entries.extend_from_slice(entries);
         self
