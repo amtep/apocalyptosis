@@ -35,12 +35,8 @@ pub struct Dialog {
 #[derive(Component)]
 pub struct DialogConfirmed;
 
-#[derive(EntityEvent)]
-#[entity_event(propagate, auto_propagate)]
-pub struct DialogConfirmEvent {
-    pub entity: Entity,
-    pub enabled: bool,
-}
+#[derive(Component)]
+pub struct DialogConfirm(pub bool);
 
 #[derive(Component)]
 struct ConfirmButton(Entity);
@@ -206,12 +202,14 @@ fn on_dialog_add(
                 ))
             }
             DialogBody::Entity(entity) => {
-                entity_commands.observe(
-                    |mut dialog_confirm: On<DialogConfirmEvent>,
-                     mut commands: Commands,
-                     confirm_buttons: Query<&ConfirmButton>| {
-                        if let Ok(confirm_button) = confirm_buttons.get(dialog_confirm.entity) {
-                            if dialog_confirm.enabled {
+                entity_commands.commands().entity(entity).observe(
+                    move |confirm: On<Insert, DialogConfirm>,
+                          mut commands: Commands,
+                          dialog_confirms: Query<&DialogConfirm>,
+                          confirm_buttons: Query<&ConfirmButton>| {
+                        if let Ok(confirm_button) = confirm_buttons.get(dialog_root) {
+                            let dialog_confirm = dialog_confirms.get(confirm.entity).unwrap();
+                            if dialog_confirm.0 {
                                 commands
                                     .entity(confirm_button.0)
                                     .try_remove::<InteractionDisabled>();
@@ -221,7 +219,6 @@ fn on_dialog_add(
                                     .insert(InteractionDisabled);
                             }
                         }
-                        dialog_confirm.propagate(false);
                     },
                 );
                 entity_commands.add_child(entity)

@@ -38,7 +38,7 @@ pub struct BasetypesHandle(pub Handle<BasetypesAsset>);
 #[derive(Deserialize, Debug, Clone, Reflect)]
 #[serde(rename_all = "kebab-case")]
 pub struct BasetypeSettings {
-    pub people: isize,
+    pub max_pop: isize,
     pub cost_per_day: FundsAmount,
     pub initial_cost: FundsAmount,
     pub police_suspicion: u32,

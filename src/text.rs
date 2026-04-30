@@ -67,6 +67,12 @@ impl TextArgValue {
     }
 }
 
+impl From<f64> for TextArgValue {
+    fn from(value: f64) -> Self {
+        TextArgValue::Number(value)
+    }
+}
+
 impl From<FundsAmount> for TextArgValue {
     fn from(value: FundsAmount) -> Self {
         TextArgValue::Number(value as f64)

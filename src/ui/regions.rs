@@ -177,47 +177,27 @@ fn on_region_click(
         .observe(
             |menu_clicked: On<Add, MenuClicked>,
              mut commands: Commands,
-             menu_clickeds: Query<&MenuClicked>| {
+             menu_clickeds: Query<&MenuClicked>,
+             base_types_handle: Res<BasetypesHandle>,
+             base_types_asset: Res<Assets<BasetypesAsset>>| {
                 let menu_clicked = menu_clickeds.get(menu_clicked.entity).unwrap();
+                let base_types = &base_types_asset.get(base_types_handle.0.id()).unwrap().0;
 
-                match menu_clicked.0.as_str() {
-                    "acquire-apartment" => {
-                        commands.spawn(
-                            Dialog::new()
-                                .with_pause()
-                                .with_cancel()
-                                .with_title("acquire-apartment")
-                                .with_text_body("acquire-apartment-dialog"),
-                        );
+                if menu_clicked.0.starts_with("acquire-") {
+                    for (name, settings) in base_types.iter() {
+                        if name == menu_clicked.0.strip_prefix("acquire-").unwrap() {
+                            commands.spawn(
+                                Dialog::new()
+                                    .with_pause()
+                                    .with_cancel()
+                                    .with_title(menu_clicked.0.as_str())
+                                    .with_text_body(
+                                        TextKey::new("acquire-basetype-dialog")
+                                            .add_arg("funds", settings.initial_cost as f64),
+                                    ),
+                            );
+                        }
                     }
-                    "acquire-old-farmhouse" => {
-                        commands.spawn(
-                            Dialog::new()
-                                .with_pause()
-                                .with_cancel()
-                                .with_title("acquire-old-farmhouse")
-                                .with_text_body("acquire-old-farmhouse-dialog"),
-                        );
-                    }
-                    "acquire-abandoned-hospital" => {
-                        commands.spawn(
-                            Dialog::new()
-                                .with_pause()
-                                .with_cancel()
-                                .with_title("acquire-abandoned-hospital")
-                                .with_text_body("acquire-abandoned-hospital-dialog"),
-                        );
-                    }
-                    "acquire-castle" => {
-                        commands.spawn(
-                            Dialog::new()
-                                .with_pause()
-                                .with_cancel()
-                                .with_title("acquire-castle")
-                                .with_text_body("acquire-castle-dialog"),
-                        );
-                    }
-                    _ => unreachable!(),
                 }
             },
         );

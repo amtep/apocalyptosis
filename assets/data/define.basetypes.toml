@@ -1,26 +1,26 @@
 [apartment]
-people = 5
+max-pop = 5
 cost-per-day = 20
 initial-cost = 2000
 police-suspicion = 1
 media-suspicion = 1
 
 [old-farmhouse]
-people = 20
+max-pop = 20
 cost-per-day = 60
 initial-cost = 100000
 police-suspicion = 0
 media-suspicion = 1
 
 [abandoned-hospital]
-people = 40
+max-pop = 40
 cost-per-day = 100
 initial-cost = 50000
 police-suspicion = 2
 media-suspicion = 1
 
 [castle]
-people = 50
+max-pop = 50
 cost-per-day = 500
 initial-cost = 500000
 police-suspicion = 2

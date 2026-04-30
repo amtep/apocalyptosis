@@ -9,7 +9,7 @@ use crate::{
     text::TextKey,
     ui::{
         DisplayFontHandle, FontHandle, UnicodeFontHandle,
-        dialog::{Dialog, DialogConfirmEvent, DialogConfirmed},
+        dialog::{Dialog, DialogConfirm, DialogConfirmed},
         save_load::open_load_game_popup,
     },
 };
@@ -115,12 +115,14 @@ pub fn setup_main_menu(
                          unicode_font_handle: Res<UnicodeFontHandle>| {
                             if click.button == PointerButton::Primary {
 
-                                let entity = commands.spawn(Node {
+                                let mut entity_commands = commands.spawn(Node {
                                     flex_direction: FlexDirection::Column,
                                     align_items: AlignItems::Center,
                                     width: percent(100),
                                     ..Default::default()
-                                }).with_child(
+                                });
+                                let entity = entity_commands.id();
+                                entity_commands.with_child(
                                     (
                                         TextInputNode {
                                             mode: TextInputMode::SingleLine,
@@ -179,17 +181,13 @@ pub fn setup_main_menu(
                                                         TextFont::from_font_size(72.0).with_font(unicode_font_handle.0.clone()),
                                                     )
                                                 ]
-                                            )).observe(move |click: On<Pointer<Click>>, mut commands: Commands| {
+                                            )).observe(move |_: On<Pointer<Click>>, mut commands: Commands| {
                                                 commands.trigger(CultSymbolChanged(symbol));
-                                                commands.trigger(DialogConfirmEvent {
-                                                    entity: click.entity,
-                                                    enabled: true,
-                                                });
+                                                commands.entity(entity).insert(DialogConfirm(true));
                                             });
                                         }
                                     });
-                                })
-                                .id();
+                                });
 
                                 commands.spawn(Dialog::new()
                                     .with_title("menu-button-new-game")

@@ -13,8 +13,5 @@ acquire-old-farmhouse-desc = empty
 acquire-abandoned-hospital-desc = empty
 acquire-castle-desc = empty
 
-
-acquire-apartment-dialog = empty
-acquire-old-farmhouse-dialog = empty
-acquire-abandoned-hospital-dialog = empty
-acquire-castle-dialog = empty
+acquire-basetype-dialog =
+    Initial cost: { funds }
