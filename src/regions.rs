@@ -46,7 +46,6 @@ pub struct Location {
 pub struct RegionSettings {
     #[serde(flatten)]
     pub location: Location,
-    #[serde(default)]
     pub requires_discovery: Option<String>,
     #[serde(default)]
     pub hidden: bool,

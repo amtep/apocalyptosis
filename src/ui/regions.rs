@@ -1,11 +1,11 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, ui::InteractionDisabled};
 
 use crate::{
     bases::{BasetypesAsset, BasetypesHandle, spawn_base},
     constants::ui::{colors::*, fonts::*},
     discoveries::DiscoveriesResearched,
     funds::Funds,
-    regions::{BasePlot, Location, Region},
+    regions::{BasePlot, Location, Region, RegionsAsset, RegionsHandle},
     suspicion::{MediaSuspicion, PoliceSuspicion},
     text::TextKey,
     ui::{
@@ -42,9 +42,18 @@ pub fn setup(
     display_font_handle: Res<DisplayFontHandle>,
     mono_font_handle: Res<MonoFontHandle>,
     emoji_font_handle: Res<EmojiFontHandle>,
+    regions_handle: Res<RegionsHandle>,
+    regions_assets: Res<Assets<RegionsAsset>>,
+    discovered: Res<DiscoveriesResearched>,
 ) {
+    let region_settings = &regions_assets.get(regions_handle.0.id()).unwrap().0;
+
     for (entity, region, location, children) in regions.iter() {
-        commands
+        let Some(settings) = region_settings.get(&region.name) else {
+            error!("Unknown region {}", &region.name);
+            continue;
+        };
+        let region_commands = commands
             .spawn((
                 ChildOf(*map_ui),
                 ViewOf(entity),
@@ -161,6 +170,12 @@ pub fn setup(
                         out.propagate(false);
                     });
             });
+        if let Some(discovery) = settings.requires_discovery.as_ref()
+            && !discovered.0.contains(discovery)
+        {
+            region_commands.insert(InteractionDisabled);
+        }
+
         for child in children {
             let Ok(location) = base_plots.get(*child) else {
                 continue;
