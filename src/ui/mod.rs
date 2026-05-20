@@ -21,7 +21,6 @@ use crate::{
     text::TextKey,
     time::{CurrentGameSpeed, GameDate, GameSpeed, GameSpeedAction, GameSpeedChangedEvent},
     ui::{
-        buttons::setup_observe_buttons,
         dialog::Dialog,
         discoveries::open_discoveries_menu,
         main_menu::setup_main_menu,
@@ -52,11 +51,11 @@ pub fn plugin(app: &mut App) {
         menu::plugin,
         toasts::plugin,
         sliders::plugin,
+        buttons::plugin,
     ))
     .init_resource::<UiScale>()
     .init_resource::<InputFocus>()
     .add_systems(OnEnter(GameState::Load), setup_fonts)
-    .add_systems(OnExit(GameState::Load), setup_observe_buttons)
     .add_systems(OnEnter(GameState::MainMenu), setup_main_menu)
     .add_systems(
         OnEnter(GameState::Main),

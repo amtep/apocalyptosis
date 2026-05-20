@@ -21,7 +21,10 @@ mod time;
 mod ui;
 
 pub fn app() {
-    use bevy::{prelude::*, ui_widgets::UiWidgetsPlugins, window::WindowMode};
+    use bevy::{
+        input_focus::tab_navigation::TabNavigationPlugin, prelude::*, ui_widgets::UiWidgetsPlugins,
+        window::WindowMode,
+    };
     use bevy_ui_text_input::TextInputPlugin;
 
     App::new()
@@ -43,6 +46,7 @@ pub fn app() {
                 }),
             TextInputPlugin,
             UiWidgetsPlugins,
+            TabNavigationPlugin,
             (
                 #[cfg(feature = "dev")]
                 dev::plugin,

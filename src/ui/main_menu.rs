@@ -1,4 +1,7 @@
-use bevy::prelude::*;
+use bevy::{
+    input_focus::tab_navigation::{TabGroup, TabIndex},
+    prelude::*,
+};
 use bevy_ui_text_input::{TextInputBuffer, TextInputMode, TextInputNode, TextInputPrompt};
 
 use crate::{
@@ -14,6 +17,7 @@ use crate::{
     text::TextKey,
     ui::{
         DisplayFontHandle, EmojiFontHandle, FontHandle, Selected,
+        buttons::Clicked,
         dialog::{Dialog, DialogCancelled, DialogConfirm, DialogConfirmed},
         save_load::{load_most_recent_game, open_load_game_popup},
         tooltip::Tooltip,
@@ -47,6 +51,7 @@ pub fn setup_main_menu(
     let button = |key| {
         (
             Button,
+            TabIndex(0),
             Node {
                 width: percent(100),
                 padding: UiRect::axes(px(30), px(15)),
@@ -68,6 +73,7 @@ pub fn setup_main_menu(
     commands
         .spawn((
             DespawnOnExit(GameState::MainMenu),
+            TabGroup::new(0),
             Node {
                 width: percent(100),
                 height: percent(100),
@@ -110,20 +116,17 @@ pub fn setup_main_menu(
                     let any_save = any_save_file_exists();
                     if any_save {
                         parent.spawn(button("main-menu-button-continue-game")).observe(
-                            |click: On<Pointer<Click>>, mut commands: Commands, next_state: ResMut<NextState<GameState>>| {
-                                if click.button == PointerButton::Primary {
-                                    load_most_recent_game(commands.reborrow(), next_state);
-                                }
+                            |_: On<Clicked>, mut commands: Commands, next_state: ResMut<NextState<GameState>>| {
+                                load_most_recent_game(commands.reborrow(), next_state);
                             },
                         );
                     }
 
                     parent.spawn(button("main-menu-button-new-game")).observe(
-                        move |click: On<Pointer<Click>>,
+                        move |_: On<Clicked>,
                          mut commands: Commands,
                          asset_server: Res<AssetServer>,
                          font_handle: Res<FontHandle>| {
-                            if click.button == PointerButton::Primary {
                                 let cult_symbol_observer = commands
                                     .add_observer(
                                         |event: On<CultSymbolChanged>, mut cult_symbols: Query<(&mut ImageNode, &CultSym)>| {
@@ -246,26 +249,21 @@ pub fn setup_main_menu(
                                             commands.remove_resource::<CultSymbol>();
                                         }
                                     );
-                            }
                         },
                     );
                     if any_save {
                         parent.spawn(button("main-menu-button-load-game")).observe(
-                            |click: On<Pointer<Click>>,
+                            |_: On<Clicked>,
                             mut commands: Commands,
                             asset_server: Res<AssetServer>,
                             font_handle: Res<FontHandle>| {
-                                if click.button == PointerButton::Primary {
-                                    open_load_game_popup(commands.reborrow(), asset_server, font_handle.clone());
-                                }
+                                open_load_game_popup(commands.reborrow(), asset_server, font_handle.clone());
                             },
                         );
                     }
                     parent.spawn(button("main-menu-button-quit")).observe(
-                        |click: On<Pointer<Click>>, mut exit: MessageWriter<AppExit>| {
-                            if click.button == PointerButton::Primary {
+                        |_: On<Clicked>, mut exit: MessageWriter<AppExit>| {
                                 exit.write(AppExit::Success);
-                            }
                         },
                     );
                 });
