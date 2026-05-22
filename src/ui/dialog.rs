@@ -174,10 +174,14 @@ fn on_dialog_add(
     dialog_roots: Query<&ZIndex, With<DialogRoot>>,
     dialog_background: Single<Entity, With<DialogBackground>>,
     font_handle: Res<FontHandle>,
+    mut input_focus: ResMut<InputFocus>,
 ) {
     let dialog_entity = add.entity;
     let dialog = dialogs.get(dialog_entity).unwrap().clone();
     let font = font_handle.clone();
+
+    // Force keyboard navigation to consider the modal dialog only
+    input_focus.clear();
 
     let index = dialog_roots
         .iter()

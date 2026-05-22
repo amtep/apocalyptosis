@@ -1,5 +1,5 @@
 use bevy::{
-    input::keyboard::KeyboardInput,
+    input::{ButtonState, keyboard::KeyboardInput},
     input_focus::{FocusedInput, InputFocus},
     prelude::*,
     ui::InteractionDisabled,
@@ -86,6 +86,7 @@ fn setup_observe_buttons(mut commands: Commands) {
             if let Ok((mut button, has_interaction_disabled)) = buttons.get_mut(ev.event_target())
                 && !has_interaction_disabled
                 && ev.input.key_code == KeyCode::Enter
+                && ev.input.state == ButtonState::Released
             {
                 commands.entity(ev.event_target()).trigger(Clicked);
                 button.set_changed();
