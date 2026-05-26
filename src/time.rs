@@ -55,7 +55,7 @@ impl Default for GameDate {
 impl GameDate {
     #[allow(clippy::cast_sign_loss)]
     #[allow(clippy::cast_possible_truncation)]
-    pub fn days_since_start(&self) -> usize {
+    pub fn days_since_start(self) -> usize {
         (self.0 - START_DATE).num_days() as usize
     }
 }

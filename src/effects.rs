@@ -14,7 +14,6 @@ use crate::{
     regions::Region,
     rng::RandomSource,
     suspicion::{SuspicionType, add_suspicion, add_suspicion_change},
-    tasks::Task,
     time::{EndDate, GameDate},
 };
 
@@ -67,7 +66,6 @@ pub struct Scopes<'w, 's> {
     regions: Query<'w, 's, EntityRef<'static>, (With<Region>, With<Unlocked>)>,
     bases: Query<'w, 's, EntityRef<'static>, With<Base>>,
     followers: Query<'w, 's, EntityRef<'static>, With<Follower>>,
-    tasks: Query<'w, 's, EntityRef<'static>, With<Task>>,
     random: Res<'w, RandomSource>,
 
     base_types_handle: Res<'w, BasetypesHandle>,

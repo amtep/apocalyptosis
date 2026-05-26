@@ -149,9 +149,20 @@ pub fn open_discoveries_menu(
         let discovery_observer = commands
             .add_observer(
                 |event: On<DiscoveryChanged>,
-                 mut discoveries: Query<(&mut Node, &DiscoveryUi, &Children)>,
+                 mut discoveries: Query<(
+                    &mut Node,
+                    &DiscoveryUi,
+                    &Children,
+                    Has<InteractionDisabled>,
+                )>,
                  mut texts: Query<&mut TextColor, With<DiscoveryTextUi>>| {
-                    for (mut node, discovery, children) in &mut discoveries {
+                    for (mut node, discovery, children, has_interaction_disabled) in
+                        &mut discoveries
+                    {
+                        if has_interaction_disabled {
+                            continue;
+                        }
+
                         let mut text = children
                             .iter()
                             .find(|c| texts.contains(*c))
