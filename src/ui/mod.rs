@@ -502,7 +502,7 @@ fn setup_ui(
                 .with_children(|parent| {
                     // Research points counter
                     parent.spawn(secondary_bundle(
-                        px(60),
+                        px(65),
                         TextKey::new("secrets-tooltip"),
                         '🔓',
                         THEME_MAGENTA,
@@ -520,7 +520,7 @@ fn setup_ui(
                         high_threshold: 667,
                     };
                     parent.spawn(secondary_bundle(
-                        px(45),
+                        px(50),
                         TextKey::new("intelligence-suspicion"),
                         suspicion_type_icon(SuspicionType::Intelligence),
                         suspicion_type_color(SuspicionType::Intelligence),
@@ -529,7 +529,7 @@ fn setup_ui(
                         mono_font_handle.clone(),
                     ));
                     parent.spawn(secondary_bundle(
-                        px(45),
+                        px(50),
                         TextKey::new("scientific-suspicion"),
                         suspicion_type_icon(SuspicionType::Scientific),
                         suspicion_type_color(SuspicionType::Scientific),

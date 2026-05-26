@@ -1,6 +1,6 @@
 use bevy::{ecs::system::SystemParam, prelude::*};
 use either::Either::{Left, Right};
-use rand::seq::IndexedRandom;
+use rand::seq::{IndexedRandom, SliceRandom};
 use serde::Deserialize;
 
 use crate::{
@@ -50,10 +50,14 @@ pub enum Effect {
     Follower {
         name: String,
         count: isize,
+        #[serde(default)]
+        split: bool,
     },
     FollowerBusy {
         name: String,
         count: isize,
+        #[serde(default)]
+        split: bool,
         duration: u32,
     },
     Modifier(ModifierValue),
@@ -93,6 +97,18 @@ impl Scopes<'_, '_> {
         } else {
             let entity_refs = self.regions.iter().filter(|e| pred(*e)).collect::<Vec<_>>();
             entity_refs.choose(&mut self.random.rng()).copied()
+        }
+    }
+
+    pub fn get_bases(&self, entity: Option<Entity>) -> impl Iterator<Item = EntityRef<'_>> {
+        if let Some(entity) = entity {
+            Left(
+                self.children
+                    .iter_descendants(entity)
+                    .filter_map(|e| self.bases.get(e).ok()),
+            )
+        } else {
+            Right(self.bases.iter())
         }
     }
 
@@ -147,6 +163,12 @@ impl Scopes<'_, '_> {
         }
     }
 
+    pub fn get_total_follower_count(&self, entity: Option<Entity>) -> usize {
+        self.get_followers(entity)
+            .map(|e| e.get::<FollowerCount>().unwrap().0)
+            .sum::<usize>()
+    }
+
     pub fn get_follower(&self, entity: Option<Entity>) -> Option<EntityRef<'_>> {
         self.get_follower_if(entity, |_| true)
     }
@@ -195,6 +217,7 @@ pub fn apply_effect(
     mut discoveries: ResMut<DiscoveriesResearched>,
     date: Res<GameDate>,
     scopes: Scopes,
+    random: Res<RandomSource>,
 ) {
     if count == Some(0) {
         return;
@@ -278,12 +301,82 @@ pub fn apply_effect(
         Effect::Recruit { follower, amount } => {
             entity_commands!().insert(Recruit(follower, amount * count as f32));
         }
-        Effect::Follower { name, count } => {
+        Effect::Follower { name, count, split } => {
             if count == 0 {
                 return;
             }
 
-            if let Some(entity_ref) = scopes.get_follower_if(entity, |entity_ref| {
+            if split {
+                let mut bases = if count.is_positive() {
+                    scopes
+                        .get_bases(entity)
+                        .map(|e| {
+                            let max_count =
+                                scopes.get_base_type_settings(e.id()).max_follower_count;
+                            let total_count = scopes.get_total_follower_count(Some(e.id()));
+                            (e.id(), max_count - total_count, 0)
+                        })
+                        .collect::<Vec<_>>()
+                } else {
+                    scopes
+                        .get_bases(entity)
+                        .map(|e| {
+                            let follower_count = scopes
+                                .get_follower_if(Some(e.id()), |e| {
+                                    *name == e.get::<Follower>().unwrap().0
+                                })
+                                .unwrap()
+                                .get::<FollowerCount>()
+                                .unwrap()
+                                .0;
+                            (e.id(), follower_count, 0)
+                        })
+                        .collect::<Vec<_>>()
+                };
+
+                bases.shuffle(&mut random.rng());
+
+                let mut count = count;
+                'outer: loop {
+                    let mut has_any_changed = false;
+
+                    for base in &mut bases {
+                        if base.1 != base.2 {
+                            has_any_changed = true;
+                            base.2 += 1;
+                            if count.is_positive() {
+                                count -= 1;
+                            } else {
+                                count += 1;
+                            }
+                            if count == 0 {
+                                break 'outer;
+                            }
+                        }
+                    }
+
+                    if !has_any_changed {
+                        break;
+                    }
+                }
+
+                for (base_entity, _, change) in bases {
+                    let follower_entity_ref = scopes
+                        .get_follower_if(Some(base_entity), |e| {
+                            *name == e.get::<Follower>().unwrap().0
+                        })
+                        .unwrap();
+                    let mut follower_count = *follower_entity_ref.get::<FollowerCount>().unwrap();
+                    if count.is_positive() {
+                        follower_count.0 += change;
+                    } else {
+                        follower_count.0 -= change;
+                    }
+                    commands
+                        .entity(follower_entity_ref.id())
+                        .insert(follower_count);
+                }
+            } else if let Some(entity_ref) = scopes.get_follower_if(entity, |entity_ref| {
                 if *name != entity_ref.get::<Follower>().unwrap().0 {
                     return false;
                 }
@@ -304,11 +397,11 @@ pub fn apply_effect(
                 follower_count.0 = follower_count.0.saturating_add_signed(count);
                 commands.entity(entity_ref.id()).insert(follower_count);
             }
-            // TODO: allow adding/removing followers less than the count too.
         }
         Effect::FollowerBusy {
             name,
             count,
+            split,
             duration,
         } => todo!(),
         Effect::Modifier(modifier_value) => {
